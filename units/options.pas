@@ -15,6 +15,7 @@ type
   private
     ini: TIniFile;
     function GetDateFormat: integer;
+    function GetDeviceName: integer;
     function GetDirectory: string;
     function GetExtension: string;
     function GetFilenameFormat: integer;
@@ -24,6 +25,7 @@ type
     function GetTopic: string;
     function GetUser: string;
     procedure SetDateFormat(AValue: integer);
+    procedure SetDeviceName(AValue: integer);
     procedure SetDirectory(AValue: string);
     procedure SetExtension(AValue: string);
     procedure SetFilenameFormat(AValue: integer);
@@ -45,6 +47,7 @@ type
     property extension: string read GetExtension write SetExtension;
     property dateformat: integer read GetDateFormat write SetDateFormat;
     property FilenameFormat: integer read GetFilenameFormat write SetFilenameFormat;
+    property DeviceName: integer read GetDeviceName write SetDeviceName;
   end;
 
 var
@@ -63,6 +66,7 @@ const
   Sextension = 'Extension';
   SdateFormat = 'DateFormat';
   SfilenameFormat = 'FilenameFormat';
+  SdeviceName = 'DeviceName';
 
 const
   CONFIGFILENAME = 'options.ini';
@@ -91,6 +95,11 @@ end;
 function TParams.GetDateFormat: integer;
 begin
   result := ini.ReadInteger(Soptions, SdateFormat, 2);
+end;
+
+function TParams.GetDeviceName: integer;
+begin
+  result := ini.ReadInteger(Soptions, sdeviceName, 0);
 end;
 
 function TParams.GetDirectory: string;
@@ -131,6 +140,11 @@ end;
 procedure TParams.SetDateFormat(AValue: integer);
 begin
   ini.writeInteger(Soptions, SdateFormat, AValue);
+end;
+
+procedure TParams.SetDeviceName(AValue: integer);
+begin
+  ini.writeInteger(Soptions, SdeviceName, AValue);
 end;
 
 procedure TParams.SetDirectory(AValue: string);

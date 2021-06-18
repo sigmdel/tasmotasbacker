@@ -41,15 +41,19 @@ type
   TMainForm = class(TForm)
     ApplicationProperties1: TApplicationProperties;
     DateFormatEdit: TComboBox;
+    DeviceGrid: TStringGrid;
+    Label15: TLabel;
     Next1Button: TButton;
     Next2Button: TButton;
     OptionsButton: TButton;
     BackupButton: TButton;
+    Panel1: TPanel;
     QuitButton: TButton;
     BackButton: TButton;
+    RadioButton3: TRadioButton;
+    RadioButton4: TRadioButton;
     SaveButton: TButton;
     CheckBox1: TCheckBox;
-    DeviceList: TCheckListBox;
     DateEdit: TDateEdit;
     DirectoryEdit: TDirectoryEdit;
     Label14: TLabel;
@@ -94,13 +98,14 @@ type
     procedure DeviceListClickCheck(Sender: TObject);
     procedure ExtensionEditChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure OptionsGridClick(Sender: TObject);
+    procedure GridClick(Sender: TObject);
     procedure QuitButtonClick(Sender: TObject);
     procedure GridHeaderSized(Sender: TObject; IsColumn: Boolean;
       Index: Integer);
     procedure GridResize(Sender: TObject);
     procedure SaveButtonClick(Sender: TObject);
   private
+    resizinggrid: boolean;
     newdev: boolean;
     function GetExtension: string;
     procedure GetDevices;
@@ -147,7 +152,8 @@ type
   TThisMQTTConnection = class(TMQTTConnection)
   private
     FThisIP: string;
-    FThisName: string;
+    FThisTopic: string;
+    FThisHostname: string;
     procedure UpdateGUI;
     procedure MessageHandler(const payload: Pmosquitto_message);
   end;
@@ -158,10 +164,16 @@ var
 
 { TThisMQTTConnection }
 procedure TThisMQTTConnection.UpdateGUI;
+var
+  r: integer;
 begin
-   with MainForm.DeviceList do begin
-     Items.Add('%s, %s', [FThisIP, FThisName]);
-     Checked[Items.Count-1] := true;
+   with MainForm.DeviceGrid do begin
+     r := RowCount;
+     RowCount := RowCount+1;
+     cells[0, r] := '1';
+     cells[1, r] := FThisIp;
+     cells[2, r] := FThisTopic;
+     cells[3, r] := FThisHostname;
      MainForm.newdev := true;
      {
      SelStart := Lines.Text.Length-1;
@@ -187,6 +199,14 @@ begin
       end
       else
         exit;
+
+      p := pos('"Hostname":"', msg);
+      if p < 1 then exit;
+      delete(msg, 1, p + 11);
+      p := pos('"', msg);
+      if p < 1 then exit;
+      FThisHostname := copy(msg, 1, p-1);
+
       p := pos('"IPAddress":"', msg);
       if p < 1 then exit;
       delete(msg, 1, p + 12);
@@ -198,7 +218,7 @@ begin
       delete(top, 1, 5); // delete stat/
       p := pos('/', top);
       if p < 1 then exit;
-      FThisName := copy(top, 1, p-1);
+      FThisTopic := copy(top, 1, p-1);
       Synchronize(@UpdateGui);
    end;
 end;
@@ -231,7 +251,7 @@ end;
 
 procedure TMainForm.BackupButtonClick(Sender: TObject);
 var
-  i, p: integer;
+  i: integer;
   ip, device, s1, s2: string;
   httpclient: TFPHTTPClient;
   url, html: String;
@@ -243,20 +263,17 @@ begin
   Notebook1.Update;
   application.ProcessMessages;
 
-  for i := 0 to DeviceList.Count-1 do begin
-     device := DeviceList.Items[i];
-     p := pos(',', device);
-     if p < 1 then
-       continue;
-     ip := copy(device, 1,p-1);
-     delete(device, 1, p);  // remove ip
-     device := trim(device);
-
+  for i := 1 to DeviceGrid.RowCount-1 do begin
+    ip := trim(DeviceGrid.cells[1, i]);
+    if radioButton3.checked then
+      device := trim(DeviceGrid.cells[2, i])
+    else
+      device := trim(DeviceGrid.cells[3, i]);
      aRow := ResGrid.RowCount;
      ResGrid.RowCount := aRow + 1;
      ResGrid.Cells[0, aRow] := ip;
      ResGrid.Cells[1, aRow] := device;
-     if not DeviceList.Checked[i] then
+     if DeviceGrid.cells[0, i] = '0' then
        resstring := 'not selected'
      else begin
        if radiobutton1.checked then begin
@@ -280,7 +297,7 @@ begin
            if html <> '' then begin
              SaveStringToFile(html, device);
              writeln(' saved to ', device);
-             resstring := 'saved';
+             resstring := Format('saved to %s', [device]);
            end
            else begin
              writeln('get error');
@@ -305,12 +322,15 @@ end;
 
 procedure TMainForm.CheckBox1Change(Sender: TObject);
 var
-  b: boolean;
+  b: string;
   i: integer;
 begin
-  b := CheckBox1.Checked;
-  for i := 0 to DeviceList.Count-1 do
-    DeviceList.Checked[i] := b;
+  if CheckBox1.Checked then
+    b := '1'
+  else
+    b := '0';
+  for i := 0 to DeviceGrid.RowCount-1 do
+    DeviceGrid.cells[0, i] := b;
   UpdateCheckCount;
 end;
 
@@ -349,6 +369,10 @@ begin
     RadioButton1.Checked := true
   else
     RadioButton2.Checked := true;
+  if params.DeviceName = 0 then
+    RadioButton3.Checked := true
+  else
+    RadioButton4.Checked := true;
 end;
 
 procedure TMainForm.GetDevices;
@@ -387,26 +411,37 @@ begin
     insert('.', result, 1);
 end;
 
+procedure TMainForm.GridClick(Sender: TObject);
+begin
+  with Sender as TStringGrid do begin
+    if (col = 0) and (row > 0) then begin
+      if Cells[0, Row] = '0' then
+         Cells[0, Row] := '1'
+      else
+         Cells[0, Row] := '0';
+    end;
+  end;
+end;
+
 procedure TMainForm.GridHeaderSized(Sender: TObject; IsColumn: Boolean;
   Index: Integer);
 begin
-  GridResize(sender);
+  if not resizinggrid then
+    GridResize(sender);
 end;
 
 procedure TMainForm.GridResize(Sender: TObject);
+var
+  wd, j: integer;
 begin
-  with Sender as TStringGrid do
-    colwidths[2] := clientwidth - colwidths[0] - colwidths[1] - 3;
-end;
-
-procedure TMainForm.OptionsGridClick(Sender: TObject);
-begin
-  if (OptionsGrid.col = 0) and (OptionsGrid.row > 0) then begin
-    if OptionsGrid.Cells[0, OptionsGrid.Row] = '0' then
-       OptionsGrid.Cells[0, OptionsGrid.Row] := '1'
-    else
-       OptionsGrid.Cells[0, OptionsGrid.Row] := '0';
+  resizinggrid := true;
+  with Sender as TStringGrid do begin
+    wd := 3;
+    for j := 0 to Colcount-2 do
+      wd := wd + colwidths[j];
+    colwidths[colcount-1] := clientwidth - wd;
   end;
+  resizinggrid := false;
 end;
 
 procedure TMainForm.Next1ButtonClick(Sender: TObject);
@@ -484,6 +519,17 @@ begin
       cells[0, 9] := '0'
     else
       cells[0, 9] := '1';
+
+    cells[1, 10] := 'Device Name';
+    if radioButton3.Checked then
+      cells[2, 10] := 'Topic'
+    else
+      cells[2, 10] := 'Hostname';
+    if (radioButton3.checked and (params.devicename = 0))
+    or (radioButton4.checked and (params.devicename = 1)) then
+      cells[0, 10] := '0'
+    else
+      cells[0, 10] := '1';
   end;
   Notebook1.PageIndex := 4;
 end;
@@ -501,18 +547,22 @@ begin
     if OptionsGrid.cells[0, i] = '0' then
        continue;
     case i of
-      1: params.host := OptionsGrid.cells[2, i];
-      2: params.port := PortEdit.value;
-      3: params.user := OptionsGrid.cells[2, i];
-      4: params.password := OptionsGrid.cells[2, i];
-      5: params.topic := OptionsGrid.cells[2, i];
-      6: params.directory := OptionsGrid.cells[2, i];
-      7: params.extension := OptionsGrid.cells[2, i];
-      8: params.dateformat := DateFormatEdit.ItemIndex;
-      9: if RadioButton1.Checked then
-           params.filenameformat := 0
-         else
-           params.filenameformat := 1;
+       1: params.host := OptionsGrid.cells[2, i];
+       2: params.port := PortEdit.value;
+       3: params.user := OptionsGrid.cells[2, i];
+       4: params.password := OptionsGrid.cells[2, i];
+       5: params.topic := OptionsGrid.cells[2, i];
+       6: params.directory := OptionsGrid.cells[2, i];
+       7: params.extension := OptionsGrid.cells[2, i];
+       8: params.dateformat := DateFormatEdit.ItemIndex;
+       9: if RadioButton1.Checked then
+            params.filenameformat := 0
+          else
+            params.filenameformat := 1;
+      10: if RadioButton3.Checked then
+            params.devicename := 0
+          else
+            params.devicename := 1;
      end;
   end;
   close;
@@ -523,9 +573,9 @@ var
   i, checkcount: integer;
 begin
   checkcount := 0;
-  for i := 0 to DeviceList.Count-1 do
-    if DeviceList.Checked[i] then inc(checkcount);
-  label11.Caption := Format('%d devices checked / %d total', [checkcount, DeviceList.Count]);
+  for i := 1 to DeviceGrid.RowCount-1 do
+    if DeviceGrid.cells[0, i] = '1' then inc(checkcount);
+  label11.Caption := Format('%d devices checked / %d total', [checkcount, DeviceGrid.RowCount-1]);
 end;
 
 end.
