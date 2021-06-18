@@ -40,16 +40,21 @@ type
 
   TMainForm = class(TForm)
     ApplicationProperties1: TApplicationProperties;
-    Button1: TButton;
-    Button2: TButton;
-    Button3: TButton;
-    Button4: TButton;
-    Button5: TButton;
-    Button6: TButton;
+    DateFormatEdit: TComboBox;
+    Next1Button: TButton;
+    Next2Button: TButton;
+    OptionsButton: TButton;
+    BackupButton: TButton;
+    QuitButton: TButton;
+    BackButton: TButton;
+    SaveButton: TButton;
     CheckBox1: TCheckBox;
     DeviceList: TCheckListBox;
     DateEdit: TDateEdit;
     DirectoryEdit: TDirectoryEdit;
+    Label14: TLabel;
+    Page5: TPage;
+    OptionsGrid: TStringGrid;
     TopicEdit: TEdit;
     HostEdit: TEdit;
     Label11: TLabel;
@@ -78,18 +83,23 @@ type
     RadioButton2: TRadioButton;
     PortEdit: TSpinEdit;
     procedure ApplicationProperties1Idle(Sender: TObject; var Done: Boolean);
-    procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
-    procedure Button4Click(Sender: TObject);
-    procedure Button6Click(Sender: TObject);
+    procedure DateFormatEditChange(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
+    procedure Next1ButtonClick(Sender: TObject);
+    procedure Next2ButtonClick(Sender: TObject);
+    procedure OptionsButtonClick(Sender: TObject);
+    procedure BackupButtonClick(Sender: TObject);
+    procedure BackButtonClick(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure DeviceListClickCheck(Sender: TObject);
     procedure ExtensionEditChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure ResGridHeaderSized(Sender: TObject; IsColumn: Boolean;
+    procedure OptionsGridClick(Sender: TObject);
+    procedure QuitButtonClick(Sender: TObject);
+    procedure GridHeaderSized(Sender: TObject; IsColumn: Boolean;
       Index: Integer);
-    procedure ResGridResize(Sender: TObject);
+    procedure GridResize(Sender: TObject);
+    procedure SaveButtonClick(Sender: TObject);
   private
     newdev: boolean;
     function GetExtension: string;
@@ -105,7 +115,7 @@ var
 implementation
 
 uses
-  fileinfo, fphttpclient, mqttclass, mosquitto;
+  fileinfo, options, fphttpclient, mqttclass, mosquitto;
 
 {$R *.lfm}
 
@@ -118,6 +128,20 @@ const
   MOSQ_LOG = MOSQ_LOG_NODEBUG;
   //MOSQ_LOG = MOSQ_LOG_NONE;
   {$ENDIF}
+
+  //Save a string as a file
+  procedure SaveStringToFile(const s, filename: string);
+  var
+    F: TextFile;
+  begin
+    AssignFile(F, filename);
+    try
+      ReWrite(F);
+      Write(F, s);
+    finally
+      CloseFile(F);
+    end;
+  end;
 
 type
   TThisMQTTConnection = class(TMQTTConnection)
@@ -132,7 +156,6 @@ var
   MqttClient: TThisMQTTConnection = nil;
   MqttConfig: TMQTTConfig;
 
-
 { TThisMQTTConnection }
 procedure TThisMQTTConnection.UpdateGUI;
 begin
@@ -146,7 +169,6 @@ begin
      }
   end;
 end;
-
 
 // make it option to use mqtt-topic or hostname
 procedure TThisMQTTConnection.MessageHandler(const payload: Pmosquitto_message);
@@ -181,14 +203,7 @@ begin
    end;
 end;
 
-
 { TMainForm }
-
-procedure TMainForm.Button1Click(Sender: TObject);
-begin
-  GetDevices;
-  Notebook1.PageIndex := 1;
-end;
 
 procedure TMainForm.ApplicationProperties1Idle(Sender: TObject;
   var Done: Boolean);
@@ -199,40 +214,22 @@ begin
   end;
 end;
 
-procedure TMainForm.Button2Click(Sender: TObject);
+procedure TMainForm.DateFormatEditChange(Sender: TObject);
 begin
-  DateEdit.Date := date;
-  Notebook1.PageIndex := 2;
+   DateEdit.DateOrder := TDateOrder(DateFormatEdit.ItemIndex + 1);
 end;
 
+procedure TMainForm.FormDestroy(Sender: TObject);
+begin
+  MqttClient.free;
+end;
 
-procedure TMainForm.Button6Click(Sender: TObject);
+procedure TMainForm.BackButtonClick(Sender: TObject);
 begin
   Notebook1.PageIndex := 1;
 end;
 
-procedure TMainForm.Button3Click(Sender: TObject);
-begin
-  MqttClient.free;
-  close;
-end;
-
-//Save a string as a file
-procedure SaveStringToFile(const s, filename: string);
-var
-  F: TextFile;
-begin
-  AssignFile(F, filename);
-  try
-    ReWrite(F);
-    Write(F, s);
-  finally
-    CloseFile(F);
-  end;
-end;
-
-
-procedure TMainForm.Button4Click(Sender: TObject);
+procedure TMainForm.BackupButtonClick(Sender: TObject);
 var
   i, p: integer;
   ip, device, s1, s2: string;
@@ -241,7 +238,6 @@ var
   aRow: integer;
   resstring: string;
 begin
-  button5.Visible := false;
   Notebook1.PageIndex := 3;
   Notebook1.Invalidate;
   Notebook1.Update;
@@ -271,7 +267,7 @@ begin
          s1 := DateEdit.Text;
          s2 := trim(device);
        end;
-       device := Format('%s%s%s-%s.%s',
+       device := Format('%s%s%s-%s%s',
          [DirectoryEdit.Directory,  DirectorySeparator, s1, s2, GetExtension]);
        ForceDirectories(DirectoryEdit.Directory);
        url := 'http://' + ip + '/dl';
@@ -299,11 +295,11 @@ begin
        finally
          httpclient.free;
        end;
-       ResGrid.Cells[2, aRow] := resstring;
-       ResGrid.invalidate;
-       ResGrid.Update;
-       application.ProcessMessages;
      end;
+     ResGrid.Cells[2, aRow] := resstring;
+     ResGrid.invalidate;
+     ResGrid.Update;
+     application.ProcessMessages;
   end;
 end;
 
@@ -323,15 +319,6 @@ begin
   UpdateCheckCount;
 end;
 
-function TMainForm.GetExtension: string;
-begin
-  result := ExtensionEdit.Text;
-  if (result = '.') then
-    result := ''
-  else if (result <> '') and (result[1] <> '.') then
-    insert('.', result, 1);
-end;
-
 procedure TMainForm.ExtensionEditChange(Sender: TObject);
 var
   newext: string;
@@ -349,23 +336,23 @@ begin
     caption := Format('Tasmotas Backer [%d.%d.%d]', [Major,Minor,Revision])
   else
      caption := 'Tasmotas Backer';
-end;
-
-procedure TMainForm.ResGridHeaderSized(Sender: TObject; IsColumn: Boolean;
-  Index: Integer);
-begin
-  ResGridResize(nil);
-end;
-
-procedure TMainForm.ResGridResize(Sender: TObject);
-begin
-  with ResGrid do
-    colwidths[2] := clientwidth - colwidths[0] - colwidths[1] - 3;
+  HostEdit.Text := params.host;
+  PortEdit.value := params.port;
+  UserEdit.Text := params.user;
+  PasswordEdit.Text := params.password;
+  TopicEdit.Text := params.topic;
+  DirectoryEdit.directory := params.directory;
+  ExtensionEdit.text := params.extension;
+  DateFormatEdit.ItemIndex := params.dateformat;
+  DateEdit.DateOrder := TDateOrder(DateFormatEdit.ItemIndex + 1);
+  if params.FilenameFormat = 0 then
+    RadioButton1.Checked := true
+  else
+    RadioButton2.Checked := true;
 end;
 
 procedure TMainForm.GetDevices;
 begin
-
   FillChar(MqttConfig, sizeof(MqttConfig), 0);
   with MqttConfig do begin
      //ssl := aBroker.SSL;
@@ -389,6 +376,146 @@ begin
   finally
 
   end;
+end;
+
+function TMainForm.GetExtension: string;
+begin
+  result := ExtensionEdit.Text;
+  if (result = '.') then
+    result := ''
+  else if (result <> '') and (result[1] <> '.') then
+    insert('.', result, 1);
+end;
+
+procedure TMainForm.GridHeaderSized(Sender: TObject; IsColumn: Boolean;
+  Index: Integer);
+begin
+  GridResize(sender);
+end;
+
+procedure TMainForm.GridResize(Sender: TObject);
+begin
+  with Sender as TStringGrid do
+    colwidths[2] := clientwidth - colwidths[0] - colwidths[1] - 3;
+end;
+
+procedure TMainForm.OptionsGridClick(Sender: TObject);
+begin
+  if (OptionsGrid.col = 0) and (OptionsGrid.row > 0) then begin
+    if OptionsGrid.Cells[0, OptionsGrid.Row] = '0' then
+       OptionsGrid.Cells[0, OptionsGrid.Row] := '1'
+    else
+       OptionsGrid.Cells[0, OptionsGrid.Row] := '0';
+  end;
+end;
+
+procedure TMainForm.Next1ButtonClick(Sender: TObject);
+begin
+  GetDevices;
+  Notebook1.PageIndex := 1;
+end;
+
+procedure TMainForm.Next2ButtonClick(Sender: TObject);
+begin
+  DateEdit.Date := date;
+  Notebook1.PageIndex := 2;
+end;
+
+procedure TMainForm.OptionsButtonClick(Sender: TObject);
+
+  procedure setCb(row: integer; const current: string);
+  var
+    v: string;
+  begin
+    if OptionsGrid.cells[2, row] = current then
+      v := '0'
+    else
+      v := '1';
+    OptionsGrid.cells[0, row] := v;
+  end;
+
+begin
+  with OptionsGrid do begin
+    cells[1, 1] := 'MQTT Host';
+    cells[2, 1] := HostEdit.Text;
+    setCb(1, params.host);
+
+    cells[1, 2] := 'MQTT Port';
+    cells[2, 2] := PortEdit.Text;
+    if PortEdit.value = params.port then
+      cells[0, 2] := '0'
+    else
+      cells[0, 2] := '1';
+
+    cells[1, 3] := 'MQTT User';
+    cells[2, 3] := UserEdit.Text;
+    setCb(3, params.user);
+
+    cells[1, 4] := 'MQTT Password';
+    cells[2, 4] := PasswordEdit.Text;
+    setCb(4, params.password);
+
+    cells[1, 5] := 'MQTT Topic';
+    cells[2, 5] := TopicEdit.Text;
+    setCb(5, params.topic);
+
+    cells[1, 6] := 'Backup Directory';
+    cells[2, 6] := DirectoryEdit.Directory;
+    setCb(6, params.directory);
+
+    cells[1, 7] := 'Backup Extension';
+    cells[2, 7] := ExtensionEdit.Text;
+    setCb(7, params.extension);
+
+    cells[1, 8] := 'Date Format';
+    cells[2, 8] := DateformatEdit.Text;
+    if DateformatEdit.ItemIndex = params.dateformat then
+      cells[0, 8] := '0'
+    else
+      cells[0, 8] := '1';
+
+    cells[1, 9] := 'Filename Format';
+    if radioButton1.Checked then
+      cells[2, 9] := ChangeFileExt(radiobutton1.caption, '')
+    else
+      cells[2, 9] := ChangeFileExt(radiobutton2.caption, '');
+    if (radioButton1.checked and (params.filenameformat = 0))
+    or (radioButton2.checked and (params.filenameformat = 1)) then
+      cells[0, 9] := '0'
+    else
+      cells[0, 9] := '1';
+  end;
+  Notebook1.PageIndex := 4;
+end;
+
+procedure TMainForm.QuitButtonClick(Sender: TObject);
+begin
+  close;
+end;
+
+procedure TMainForm.SaveButtonClick(Sender: TObject);
+var
+  i: integer;
+begin
+  for i := 1 to OptionsGrid.Rowcount-1 do begin
+    if OptionsGrid.cells[0, i] = '0' then
+       continue;
+    case i of
+      1: params.host := OptionsGrid.cells[2, i];
+      2: params.port := PortEdit.value;
+      3: params.user := OptionsGrid.cells[2, i];
+      4: params.password := OptionsGrid.cells[2, i];
+      5: params.topic := OptionsGrid.cells[2, i];
+      6: params.directory := OptionsGrid.cells[2, i];
+      7: params.extension := OptionsGrid.cells[2, i];
+      8: params.dateformat := DateFormatEdit.ItemIndex;
+      9: if RadioButton1.Checked then
+           params.filenameformat := 0
+         else
+           params.filenameformat := 1;
+     end;
+  end;
+  close;
 end;
 
 procedure TMainForm.UpdateCheckCount;

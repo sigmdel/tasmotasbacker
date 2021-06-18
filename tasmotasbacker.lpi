@@ -16,7 +16,7 @@
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
-      <MinorVersionNr Value="1"/>
+      <MinorVersionNr Value="2"/>
       <StringTable CompanyName="sigmdel.ca" LegalCopyright="0BDS" OriginalFilename="tasmotasbacker" ProductName="Tasmotas Backer"/>
     </VersionInfo>
     <BuildModes Count="3">
@@ -29,7 +29,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="forms;mosquitto-p"/>
+            <OtherUnitFiles Value="forms;mosquitto-p;units"/>
             <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Parsing>
@@ -75,7 +75,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="forms;mosquitto-p"/>
+            <OtherUnitFiles Value="forms;mosquitto-p;units"/>
             <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <CodeGeneration>
@@ -112,7 +112,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="4">
+    <Units Count="5">
       <Unit0>
         <Filename Value="tasmotasbacker.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -132,6 +132,10 @@
         <Filename Value="mosquitto-p/mqttclass.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit3>
+      <Unit4>
+        <Filename Value="units/options.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -141,7 +145,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="forms;mosquitto-p"/>
+      <OtherUnitFiles Value="forms;mosquitto-p;units"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
