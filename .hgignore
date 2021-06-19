@@ -27,9 +27,12 @@ backup
 
 
 # any executable
+*.exe
 tasmotasbacker
 poc/poc
 
+# libraries
+*.dll
 # icon file
 tasmotasbacker.ico
 poc.ico

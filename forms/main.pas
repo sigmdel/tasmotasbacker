@@ -32,7 +32,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, CheckLst, EditBtn, Grids;
+  Spin, EditBtn, Grids;
 
 type
 
@@ -290,23 +290,32 @@ begin
        ForceDirectories(DirectoryEdit.Directory);
        url := 'http://' + ip + '/dl';
        html := '';
+       {$IFNDEF MSWINDOWS}
        write('reading ', url);
+       {$ENDIF}
        httpclient := TFPHttpClient.Create(Nil);
        try
+         httpclient.ConnectTimeout := 2000; // default is 3000
          try
            html := httpclient.Get(url);
            if html <> '' then begin
              SaveStringToFile(html, device);
+             {$IFNDEF MSWINDOWS}
              writeln(' saved to ', device);
+             {$ENDIF}
              resstring := Format('saved to %s', [extractFilename(device)]);
            end
            else begin
+             {$IFNDEF MSWINDOWS}
              writeln('get error');
+             {$ENDIF}
              resstring := 'http get error';
            end;
          except
            On E: Exception do begin
+             {$IFNDEF MSWINDOWS}
              writeln(Format('Get error %s', [E.message]));
+             {$ENDIF}
              resstring := E.message;
            end;
          end;
