@@ -14,8 +14,11 @@ A utility that can back up the configuration of all Tasmota devices that share a
 - [2. Compiling](#2-compiling)
 - [3. Testing](#3-testing)
 - [4. Program Options](#4-program-options)
-- [5. Acknowledgment](#5-acknowledgment)
-- [6. Licence](#6-licence)
+- [5. WARNINGS](#5-warnings)
+    - [5.1. Beta Version](#51-beta-version)
+    - [5.2. Security](#52-security)
+- [6. Acknowledgment](#6-acknowledgment)
+- [7. Licence](#7-licence)
 
 <!-- /TOC -->
 
@@ -98,9 +101,9 @@ In Linux, the program parameters are saved in the `ini` configuration file named
 In Windows 10, the file is saved in the local `AppData` folder :
 <pre>  C:\Users\&lt;<i>user</i>&gt;\AppData\Local\sigmdel\tasmotasbacker\options.ini</pre>
 
-## WARNINGS
+## 5. WARNINGS
 
-### Beta Version
+### 5.1. Beta Version
 
 This is a beta version. While it does work, there are rough edges, notably
 
@@ -109,13 +112,13 @@ This is a beta version. While it does work, there are rough edges, notably
 
 Keep a record of configurations that were not completed because of a time out to try saving them again. Perhaps by doing a screen capture of the `Backups` page. Or start another instance of the utility and select those devices only in a second attempt.
 
-### Security
+### 5.2. Security
 
 The MQTT broker password is stored in plain text in the `ini` file. 
 
 **Do not save the MQTT broker password in the options page**
 
-## 5. Acknowledgment
+## 6. Acknowledgment
 
 Obviously, this utility would not have been possible without 
 
@@ -123,7 +126,7 @@ Obviously, this utility would not have been possible without
 - the [Eclipse Mosquitto](https://github.com/eclipse/mosquitto) project and 
 - the [mosquitto-p](https://github.com/chainq/mosquitto-p) project by Károly Balogh (chainq).
 
-## 6. Licence
+## 7. Licence
 
 The [Eclipse Mosquitto](https://github.com/eclipse/mosquitto) project is dual-licensed under the Eclipse Public License 2.0 and the
 Eclipse Distribution License 1.0.
