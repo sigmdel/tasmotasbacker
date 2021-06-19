@@ -14,6 +14,7 @@ type
   TParams = class
   private
     ini: TIniFile;
+    function GetConnectTimeout: integer;
     function GetDateFormat: integer;
     function GetDeviceName: integer;
     function GetDirectory: string;
@@ -24,6 +25,7 @@ type
     function GetPort: integer;
     function GetTopic: string;
     function GetUser: string;
+    procedure SetConnectTimeout(AValue: integer);
     procedure SetDateFormat(AValue: integer);
     procedure SetDeviceName(AValue: integer);
     procedure SetDirectory(AValue: string);
@@ -48,6 +50,7 @@ type
     property dateformat: integer read GetDateFormat write SetDateFormat;
     property FilenameFormat: integer read GetFilenameFormat write SetFilenameFormat;
     property DeviceName: integer read GetDeviceName write SetDeviceName;
+    property ConnectTimeout: integer read GetConnectTimeout write SetConnectTimeout;
   end;
 
 var
@@ -67,6 +70,7 @@ const
   SdateFormat = 'DateFormat';
   SfilenameFormat = 'FilenameFormat';
   SdeviceName = 'DeviceName';
+  SconnectTimeout = 'ConnectTimeout';
 
 const
   CONFIGFILENAME = 'options.ini';
@@ -95,6 +99,11 @@ end;
 function TParams.GetDateFormat: integer;
 begin
   result := ini.ReadInteger(Soptions, SdateFormat, 2);
+end;
+
+function TParams.GetConnectTimeout: integer;
+begin
+  result := ini.ReadInteger(Soptions, SconnectTimeout, 3000);
 end;
 
 function TParams.GetDeviceName: integer;
@@ -135,6 +144,11 @@ end;
 function TParams.GetUser: string;
 begin
   result := ini.ReadString(Soptions, Suser, '');
+end;
+
+procedure TParams.SetConnectTimeout(AValue: integer);
+begin
+  ini.writeInteger(Soptions, SconnectTimeout, AValue);
 end;
 
 procedure TParams.SetDateFormat(AValue: integer);

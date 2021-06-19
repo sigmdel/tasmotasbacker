@@ -43,6 +43,7 @@ type
     DateFormatEdit: TComboBox;
     DeviceGrid: TStringGrid;
     Label15: TLabel;
+    Label16: TLabel;
     Next1Button: TButton;
     Next2Button: TButton;
     OptionsButton: TButton;
@@ -59,6 +60,7 @@ type
     Label14: TLabel;
     Page5: TPage;
     OptionsGrid: TStringGrid;
+    TimeoutEdit: TSpinEdit;
     TopicEdit: TEdit;
     HostEdit: TEdit;
     Label11: TLabel;
@@ -88,7 +90,10 @@ type
     PortEdit: TSpinEdit;
     procedure ApplicationProperties1Idle(Sender: TObject; var Done: Boolean);
     procedure DateFormatEditChange(Sender: TObject);
+    procedure DeviceGridSelectCell(Sender: TObject; aCol, aRow: Integer;
+      var CanSelect: Boolean);
     procedure FormDestroy(Sender: TObject);
+    procedure FormResize(Sender: TObject);
     procedure Next1ButtonClick(Sender: TObject);
     procedure Next2ButtonClick(Sender: TObject);
     procedure OptionsButtonClick(Sender: TObject);
@@ -99,13 +104,21 @@ type
     procedure ExtensionEditChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure GridClick(Sender: TObject);
+    procedure Page2BeforeShow(ASender: TObject; ANewPage: TPage;
+      ANewIndex: Integer);
+    procedure Page4BeforeShow(ASender: TObject; ANewPage: TPage;
+      ANewIndex: Integer);
+    procedure Page5BeforeShow(ASender: TObject; ANewPage: TPage;
+      ANewIndex: Integer);
     procedure QuitButtonClick(Sender: TObject);
     procedure GridHeaderSized(Sender: TObject; IsColumn: Boolean;
       Index: Integer);
     procedure GridResize(Sender: TObject);
     procedure SaveButtonClick(Sender: TObject);
   private
+    currentCol: integer;
     resizinggrid: boolean;
+    updategrid: TObject;
     newdev: boolean;
     function GetExtension: string;
     procedure GetDevices;
@@ -232,6 +245,10 @@ begin
     UpdateCheckCount;
     newdev := false;
   end;
+  if assigned(updategrid) then begin
+    GridResize(updateGrid);
+    updategrid := nil;
+  end;
 end;
 
 procedure TMainForm.DateFormatEditChange(Sender: TObject);
@@ -239,9 +256,43 @@ begin
    DateEdit.DateOrder := TDateOrder(DateFormatEdit.ItemIndex + 1);
 end;
 
+procedure TMainForm.DeviceGridSelectCell(Sender: TObject; aCol, aRow: Integer;
+  var CanSelect: Boolean);
+begin
+   currentcol := aCol;
+   CanSelect := aCol = 0;
+end;
+
 procedure TMainForm.FormDestroy(Sender: TObject);
 begin
   MqttClient.free;
+end;
+
+procedure TMainForm.FormResize(Sender: TObject);
+begin
+  if not resizinggrid then begin
+    resizinggrid := true;
+    {
+    try
+      GridResize(DeviceGrid);
+      GridResize(ResGrid);
+      GridResize(OptionsGrid);
+    finally
+      invalidate;
+    end;
+    }
+    try
+      case Notebook1.PageIndex of
+        1: GridResize(DeviceGrid);
+        3: GridResize(ResGrid);
+        4: GridResize(OptionsGrid);
+        else exit;
+      end;
+      invalidate;
+    finally
+      resizinggrid := false;
+    end;
+  end;
 end;
 
 procedure TMainForm.BackButtonClick(Sender: TObject);
@@ -295,7 +346,7 @@ begin
        {$ENDIF}
        httpclient := TFPHttpClient.Create(Nil);
        try
-         httpclient.ConnectTimeout := 2000; // default is 3000
+         httpclient.ConnectTimeout := TimeoutEdit.value; // default is 3000
          try
            html := httpclient.Get(url);
            if html <> '' then begin
@@ -383,6 +434,7 @@ begin
     RadioButton3.Checked := true
   else
     RadioButton4.Checked := true;
+  TimeoutEdit.Value := params.connecttimeout;
 end;
 
 procedure TMainForm.GetDevices;
@@ -424,13 +476,31 @@ end;
 procedure TMainForm.GridClick(Sender: TObject);
 begin
   with Sender as TStringGrid do begin
-    if (col = 0) and (row > 0) then begin
+    if (currentcol = 0) and (row > 0) then begin
       if Cells[0, Row] = '0' then
          Cells[0, Row] := '1'
       else
          Cells[0, Row] := '0';
     end;
   end;
+end;
+
+procedure TMainForm.Page2BeforeShow(ASender: TObject; ANewPage: TPage;
+  ANewIndex: Integer);
+begin
+  updategrid := DeviceGrid;
+end;
+
+procedure TMainForm.Page4BeforeShow(ASender: TObject; ANewPage: TPage;
+  ANewIndex: Integer);
+begin
+  updategrid := ResGrid;
+end;
+
+procedure TMainForm.Page5BeforeShow(ASender: TObject; ANewPage: TPage;
+  ANewIndex: Integer);
+begin
+  updategrid := OptionsGrid;
 end;
 
 procedure TMainForm.GridHeaderSized(Sender: TObject; IsColumn: Boolean;
@@ -444,14 +514,12 @@ procedure TMainForm.GridResize(Sender: TObject);
 var
   wd, j: integer;
 begin
-  resizinggrid := true;
   with Sender as TStringGrid do begin
-    wd := 3;
+    wd := clientwidth - colcount;
     for j := 0 to Colcount-2 do
-      wd := wd + colwidths[j];
-    colwidths[colcount-1] := clientwidth - wd;
+      dec(wd, colwidths[j]);
+    colwidths[colcount-1] := wd;
   end;
-  resizinggrid := false;
 end;
 
 procedure TMainForm.Next1ButtonClick(Sender: TObject);
@@ -540,6 +608,13 @@ begin
       cells[0, 10] := '0'
     else
       cells[0, 10] := '1';
+
+    cells[1, 11] := 'Connect Timepout';
+    cells[2, 11] := TimeoutEdit.Text;
+    if TimeOutEdit.value = params.connecttimeout then
+      cells[0, 11] := '0'
+    else
+      cells[0, 11] := '1';
   end;
   Notebook1.PageIndex := 4;
 end;
@@ -573,6 +648,7 @@ begin
             params.devicename := 0
           else
             params.devicename := 1;
+      11: params.connecttimeout := TimeoutEdit.value;
      end;
   end;
   close;
