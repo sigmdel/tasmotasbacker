@@ -261,6 +261,7 @@ begin
   Notebook1.PageIndex := 3;
   Notebook1.Invalidate;
   Notebook1.Update;
+  Label12.caption := Format(Label12.caption, [ExpandFilename(DirectoryEdit.Directory)]);
   application.ProcessMessages;
 
   for i := 1 to DeviceGrid.RowCount-1 do begin
@@ -297,7 +298,7 @@ begin
            if html <> '' then begin
              SaveStringToFile(html, device);
              writeln(' saved to ', device);
-             resstring := Format('saved to %s', [device]);
+             resstring := Format('saved to %s', [extractFilename(device)]);
            end
            else begin
              writeln('get error');

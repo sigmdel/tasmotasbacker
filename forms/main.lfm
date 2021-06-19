@@ -14,7 +14,7 @@ object MainForm: TMainForm
     Height = 300
     Top = 0
     Width = 355
-    PageIndex = 1
+    PageIndex = 3
     Align = alClient
     TabOrder = 0
     object Page1: TPage
@@ -527,9 +527,9 @@ object MainForm: TMainForm
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = OptionsButton
         Left = 6
-        Height = 171
+        Height = 231
         Top = 32
-        Width = 308
+        Width = 343
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Left = 6
         BorderSpacing.Top = 12
@@ -574,9 +574,9 @@ object MainForm: TMainForm
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = Page4
         AnchorSideBottom.Side = asrBottom
-        Left = 239
+        Left = 274
         Height = 25
-        Top = 209
+        Top = 269
         Width = 75
         Anchors = [akRight, akBottom]
         BorderSpacing.Right = 6
@@ -591,10 +591,10 @@ object MainForm: TMainForm
         Left = 12
         Height = 14
         Top = 6
-        Width = 94
+        Width = 91
         BorderSpacing.Left = 12
         BorderSpacing.Top = 6
-        Caption = 'Save Directory'
+        Caption = 'Backups to %s'
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
