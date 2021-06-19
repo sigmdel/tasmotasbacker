@@ -1,6 +1,6 @@
 # tasmotasbacker
 
-A utility that can back up the configuration of all Tasmota devices that share a common MQTT topic. It uses the [Eclipse mosquitto](https://mosquitto.org/) library to communicate with the MQTT broker to obtain a list of IP addresses of Tasmota devices
+A utility that can back up the configuration of all Tasmota devices that share a common MQTT topic. It uses the [Eclipse mosquitto](https://mosquitto.org/) library to communicate with the MQTT broker to obtain a list of IP addresses of Tasmota devices.
 
 ![screenshot](images/backups_capture.jpg)
 
@@ -73,7 +73,7 @@ There is no requirement to install the mosquitto MQTT broker.
 
 >> It is left as an exercise for knowledgable Windows users to find a more elegant way of ensuring that the DLLs are found.
 
-Ultimately, if a mosquitto MQTT broker is to be run on the system, it may make more sense to simply copy `lazmqttc.exe` into the `mosquitto` directory along side the `mosquitto_pub.exe` and `mosquitto_sub.exe` utilities it emulates.
+Ultimately, if a mosquitto MQTT broker is to be run on the system, it may make more sense to simply copy the executable into the `mosquitto` directory along side the `mosquitto_pub.exe` and `mosquitto_sub.exe` utilities it emulates.
 
 ## 2. Compiling
 
@@ -86,10 +86,9 @@ When compiling a final version, it would be advisable to compile the release ver
 
 ## 3. Testing
 
-The project was built with Lazarus 2.0.12 (Free Pascall 3.2.0) on a Mint 20.1 system with version 1.6.9-1 of the mosquitto libraries. 
+The project was built with Lazarus 2.0.12 (Free Pascall 3.2.0) on a Mint 20.1 system with version 1.6.9-1 of the mosquitto libraries. A cursory test was done with the same compiler in Windows 10.
 
 There is a [proof of concept project](poc) in the repository that verifies that a Tasmota configuration can be downloaded.
-
 
 
 ## 4. Program Options
@@ -110,7 +109,9 @@ This is a beta version. While it does work, there are rough edges, notably
 1. No retry when the download times out
 2. No report of what results were obtained. 
 
-Keep a record of configurations that were not completed because of a time out to try saving them again. Perhaps by doing a screen capture of the `Backups` page. Or start another instance of the utility and select those devices only in a second attempt.
+Keep a record of configurations that were not completed because of a timeout to try saving them again. Perhaps by doing a screen capture of the `Backups` page. Or start another instance of the utility and select those devices only in a second attempt.
+
+Because of frequent HTTP connection timeouts when obtaining the configuration file from multiple Tasmota devices, a timeout option has been added. The default timeout value is 3 seconds (3000 ms), try lengthening the delay to 5, 10 or more seconds if too many timeouts are encountered.
 
 ### 5.2. Security
 
