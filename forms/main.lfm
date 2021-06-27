@@ -14,7 +14,7 @@ object MainForm: TMainForm
     Height = 298
     Top = 0
     Width = 421
-    PageIndex = 4
+    PageIndex = 0
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
@@ -160,8 +160,8 @@ object MainForm: TMainForm
         Left = 6
         Height = 14
         Top = 170
-        Width = 35
-        Caption = 'Topic:'
+        Width = 41
+        Caption = 'Topics:'
         ParentColor = False
       end
       object TopicEdit: TEdit
@@ -177,7 +177,7 @@ object MainForm: TMainForm
         Anchors = [akTop, akLeft, akRight]
         BorderSpacing.Top = 6
         TabOrder = 5
-        Text = 'tasmotas'
+        Text = 'tasmotas, sonoffs'
       end
     end
     object Page2: TPage

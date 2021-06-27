@@ -137,6 +137,15 @@ uses
 
 {$R *.lfm}
 
+procedure Delay(dt: DWORD);
+var
+  tcount : DWORD;
+begin
+  tcount := GetTickCount;
+  while (GetTickCount - tcount < dt) and (not Application.Terminated) do
+    Application.ProcessMessages;
+end;
+
 // mosquitto library log level
 const
   {$IFDEF MSWINDOWS}  // no log in Windows
@@ -438,6 +447,9 @@ begin
 end;
 
 procedure TMainForm.GetDevices;
+var
+  sl: TStringList;
+  i: integer;
 begin
   FillChar(MqttConfig, sizeof(MqttConfig), 0);
   with MqttConfig do begin
@@ -451,16 +463,28 @@ begin
      //reconnect_delay := aBroker.ReconnectDelay;
      //reconnect_backoff := aBroker.ReconnectBackoff;
   end;
-  MqttClient := TThisMQTTConnection.Create('mqttClient', MqttConfig, MOSQ_LOG);
+  sl := TStringList.create;
   try
-    MqttClient.AutoReconnect := true;
-    MqttClient.OnMessage := @MqttClient.MessageHandler;
-    MqttClient.Connect;
-    MqttClient.Subscribe('stat/+/STATUS5', 0);
-    newdev := true;
-    MqttClient.Publish('cmnd/' + TopicEdit.Text + '/status', '5', 0, false);
+    sl.Delimiter := ',';
+    sl.DelimitedText := TopicEdit.Text;
+    if sl.count < 1 then
+      exit;
+    MqttClient := TThisMQTTConnection.Create('mqttClient', MqttConfig, MOSQ_LOG);
+    try
+      MqttClient.AutoReconnect := true;
+      MqttClient.OnMessage := @MqttClient.MessageHandler;
+      MqttClient.Connect;
+      MqttClient.Subscribe('stat/+/STATUS5', 0);
+      newdev := true;
+      for i := 0 to sl.count-1 do begin
+        MqttClient.Publish('cmnd/' + sl[i] + '/status', '5', 0, false);
+        delay(5);
+      end;
+    except
+      // what ??
+    end;
   finally
-
+    sl.free;
   end;
 end;
 
