@@ -34,8 +34,8 @@ interface
 // parameters of the HTTP request function
 // See log() function below
 //
-{$DEFINE DEBUG_HTTP_REQUEST}
-{$DEFINE DEBUG_BACKUP}
+{  -- $DEFINE DEBUG_HTTP_REQUEST}
+{  -- $DEFINE DEBUG_BACKUP}
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
