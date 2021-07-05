@@ -9,6 +9,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   ParentBiDiMode = False
+  Position = poScreenCenter
   object Notebook1: TNotebook
     Left = 0
     Height = 298
