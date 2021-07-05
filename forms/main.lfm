@@ -14,7 +14,7 @@ object MainForm: TMainForm
     Height = 298
     Top = 0
     Width = 421
-    PageIndex = 1
+    PageIndex = 2
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
@@ -568,11 +568,11 @@ object MainForm: TMainForm
         AnchorSideTop.Side = asrCenter
         AnchorSideRight.Control = Page3
         AnchorSideRight.Side = asrBottom
-        Left = 312
+        Left = 306
         Height = 14
         Top = 137
-        Width = 103
-        Anchors = [akTop, akLeft, akRight]
+        Width = 109
+        Anchors = [akTop, akRight]
         BorderSpacing.Right = 6
         Caption = 'Connect Attempts'
         ParentColor = False
@@ -586,7 +586,7 @@ object MainForm: TMainForm
         Height = 27
         Top = 157
         Width = 63
-        Anchors = [akTop, akLeft, akRight]
+        Anchors = [akTop, akRight]
         BorderSpacing.Top = 6
         TabOrder = 10
         Value = 2
