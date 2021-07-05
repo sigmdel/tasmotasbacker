@@ -245,22 +245,6 @@ begin
   inherited destroy;
 end;
 
-procedure GetEncryptionKey;
-var
-  fname: string;
-  inf: textfile;
-begin
-  fname := ExtractFilePath(configfile) + 'key.txt';
-  {$i-}
-  assign(inf, fname);
-  reset(inf);
-  {$i+}
-  if (IoResult=0) then begin
-    read(inf, DefaultKey);
-    close(inf);
-  end;
-end;
-
 initialization
   OnGetVendorName := @Vendor;
   OnGetApplicationName := @GetAppName;
@@ -268,7 +252,7 @@ initialization
   ForceDirectories(configfile);   // create config directory, report error if false ?
   configfile := IncludeTrailingPathDelimiter(configfile) + CONFIGFILENAME;
   params := TParams.create;
-  getEncryptionKey;
+  getEncryptionKey(ExtractFilePath(configfile) + 'key.txt');
 finalization
   params.free;
 end.
