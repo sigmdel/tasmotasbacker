@@ -48,8 +48,10 @@ type
   TMainForm = class(TForm)
     ApplicationProperties1: TApplicationProperties;
     Back2Button: TButton;
+    ImageList1: TImageList;
     Label18: TLabel;
     Label19: TLabel;
+    PasswordEdit: TEditButton;
     ResetButton: TButton;
     CheckBox2: TCheckBox;
     DateFormatEdit: TComboBox;
@@ -83,7 +85,6 @@ type
     Page4: TPage;
     ResGrid: TStringGrid;
     UserEdit: TEdit;
-    PasswordEdit: TEdit;
     ExtensionEdit: TEdit;
     Label1: TLabel;
     Label10: TLabel;
@@ -104,6 +105,7 @@ type
     PortEdit: TSpinEdit;
     procedure ApplicationProperties1Idle(Sender: TObject; var Done: Boolean);
     procedure Back2ButtonClick(Sender: TObject);
+    procedure PasswordEditButtonClick(Sender: TObject);
     procedure ResetButtonClick(Sender: TObject);
     procedure CheckBox2Change(Sender: TObject);
     procedure DateFormatEditChange(Sender: TObject);
@@ -416,20 +418,24 @@ var
 { TThisMQTTConnection }
 procedure TThisMQTTConnection.UpdateGUI;
 var
-  r: integer;
+  i, r: integer;
 begin
    with MainForm.DeviceGrid do begin
-     r := RowCount;
-     RowCount := RowCount+1;
+     r := -1;
+     for i := 1 to RowCount-1 do
+       if cells[1, i] = FThisIP then begin
+         r := i;
+         break;
+       end;
+     if r < 0 then begin
+       r := RowCount;
+       RowCount := RowCount+1;
+     end;
      cells[0, r] := '1';
      cells[1, r] := FThisIp;
      cells[2, r] := FThisTopic;
      cells[3, r] := FThisHostname;
      MainForm.newdev := true;
-     {
-     SelStart := Lines.Text.Length-1;
-     SelLength := 1;
-     }
   end;
 end;
 
@@ -494,8 +500,21 @@ end;
 procedure TMainForm.Back2ButtonClick(Sender: TObject);
 begin
   DeviceGrid.RowCount := 1;
-
   Notebook1.PageIndex := 0;
+end;
+
+procedure TMainForm.PasswordEditButtonClick(Sender: TObject);
+begin
+  with PasswordEdit do begin
+     if passwordchar = #0 then begin  // hide password
+       passwordchar := '*';
+       ImageIndex := 0;
+     end
+     else begin // show password
+       passwordchar := #0;
+       ImageIndex := 1;
+     end;
+   end;
 end;
 
 procedure TMainForm.ResetButtonClick(Sender: TObject);
@@ -595,6 +614,7 @@ var
   code, count: integer;
 begin
   Notebook1.PageIndex := 3;
+  OptionsButton.setFocus;
   Notebook1.Invalidate;
   Notebook1.Update;
   Label19.caption := ExpandFilename(DirectoryEdit.Directory);
@@ -811,6 +831,7 @@ end;
 procedure TMainForm.Next1ButtonClick(Sender: TObject);
 begin
   Notebook1.PageIndex := 1;
+  CheckBox1.SetFocus;
   Notebook1.invalidate;
   Delay(2);
   GetDevicesFromMqttBroker;
@@ -820,6 +841,7 @@ procedure TMainForm.Next2ButtonClick(Sender: TObject);
 begin
   DateEdit.Date := date;
   Notebook1.PageIndex := 2;
+  DirectoryEdit.SetFocus;
 end;
 
 procedure TMainForm.OptionsButtonClick(Sender: TObject);
@@ -913,6 +935,7 @@ begin
 
   end;
   Notebook1.PageIndex := 4;
+  CheckBox2.SetFocus;
 end;
 
 procedure TMainForm.QuitButtonClick(Sender: TObject);

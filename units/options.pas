@@ -75,6 +75,9 @@ var
 
 implementation
 
+uses
+  pwd;
+
 const
   Soptions = 'Options';
   Shost = 'Host';
@@ -152,7 +155,7 @@ end;
 
 function TParams.GetPassword: string;
 begin
-  result := ini.ReadString(Soptions, Spassword, DEFAULT_PASSWORD);
+  result := Decrypt(ini.ReadString(Soptions, Spassword, DEFAULT_PASSWORD));
 end;
 
 function TParams.GetPort: integer;
@@ -167,7 +170,7 @@ end;
 
 function TParams.GetUser: string;
 begin
-  result := ini.ReadString(Soptions, Suser, DEFAULT_USER);
+  result := Decrypt(ini.ReadString(Soptions, Suser, DEFAULT_USER));
 end;
 
 procedure TParams.SetConnectAttempts(AValue: integer);
@@ -212,7 +215,7 @@ end;
 
 procedure TParams.SetPassword(AValue: string);
 begin
-  ini.WriteString(Soptions, Spassword, AValue);
+  ini.WriteString(Soptions, Spassword, Encrypt(AValue));
 end;
 
 procedure TParams.SetPort(AValue: integer);
@@ -227,7 +230,7 @@ end;
 
 procedure TParams.SetUser(AValue: string);
 begin
-  ini.WriteString(Soptions, Suser, AValue);
+  ini.WriteString(Soptions, Suser, Encrypt(AValue));
 end;
 
 constructor TParams.create;
@@ -242,6 +245,22 @@ begin
   inherited destroy;
 end;
 
+procedure GetEncryptionKey;
+var
+  fname: string;
+  inf: textfile;
+begin
+  fname := ExtractFilePath(configfile) + 'key.txt';
+  {$i-}
+  assign(inf, fname);
+  reset(inf);
+  {$i+}
+  if (IoResult=0) then begin
+    read(inf, DefaultKey);
+    close(inf);
+  end;
+end;
+
 initialization
   OnGetVendorName := @Vendor;
   OnGetApplicationName := @GetAppName;
@@ -249,6 +268,7 @@ initialization
   ForceDirectories(configfile);   // create config directory, report error if false ?
   configfile := IncludeTrailingPathDelimiter(configfile) + CONFIGFILENAME;
   params := TParams.create;
+  getEncryptionKey;
 finalization
   params.free;
 end.
