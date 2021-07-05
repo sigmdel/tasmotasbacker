@@ -7,6 +7,20 @@ interface
 uses
   Classes, SysUtils, inifiles;
 
+const
+  DEFAULT_HOST = '192.168.1.22';
+  DEFAULT_PORT = 1883;
+  DEFAULT_PASSWORD = '';
+  DEFAULT_USER = '';
+  DEFAUT_DATE_FORMAT = 2;
+  DEFAULT_ATTEMPTS = 2;
+  DEFAULT_TIMEOUT = 4000;
+  DEFAULT_DEVICE_NAME = 0;
+  DEFAULT_BACK_DIRECTORY = 'backup';
+  DEFAULT_EXTENSION = '.bin';
+  DEFAULT_FILENAME_FORMAT = 0;
+  DEFAULT_TOPIC = 'tasmotas, sonoffs';
+
 type
   
   { TParams }
@@ -14,6 +28,7 @@ type
   TParams = class
   private
     ini: TIniFile;
+    function GetConnectAttempts: integer;
     function GetConnectTimeout: integer;
     function GetDateFormat: integer;
     function GetDeviceName: integer;
@@ -25,6 +40,7 @@ type
     function GetPort: integer;
     function GetTopic: string;
     function GetUser: string;
+    procedure SetConnectAttempts(AValue: integer);
     procedure SetConnectTimeout(AValue: integer);
     procedure SetDateFormat(AValue: integer);
     procedure SetDeviceName(AValue: integer);
@@ -50,6 +66,7 @@ type
     property dateformat: integer read GetDateFormat write SetDateFormat;
     property FilenameFormat: integer read GetFilenameFormat write SetFilenameFormat;
     property DeviceName: integer read GetDeviceName write SetDeviceName;
+    property ConnectAttempts: integer read GetConnectAttempts write SetConnectAttempts;
     property ConnectTimeout: integer read GetConnectTimeout write SetConnectTimeout;
   end;
 
@@ -70,7 +87,9 @@ const
   SdateFormat = 'DateFormat';
   SfilenameFormat = 'FilenameFormat';
   SdeviceName = 'DeviceName';
+  SconnectAttempts = 'ConnectAttempts';
   SconnectTimeout = 'ConnectTimeout';
+
 
 const
   CONFIGFILENAME = 'options.ini';
@@ -93,57 +112,67 @@ end;
 
 function TParams.GetHost: string;
 begin
-  result := ini.ReadString(Soptions, Shost, '192.168.1.22');
+  result := ini.ReadString(Soptions, Shost, DEFAULT_HOST);
 end;
 
 function TParams.GetDateFormat: integer;
 begin
-  result := ini.ReadInteger(Soptions, SdateFormat, 2);
+  result := ini.ReadInteger(Soptions, SdateFormat, DEFAUT_DATE_FORMAT);
 end;
 
 function TParams.GetConnectTimeout: integer;
 begin
-  result := ini.ReadInteger(Soptions, SconnectTimeout, 3000);
+  result := ini.ReadInteger(Soptions, SconnectTimeout, DEFAULT_TIMEOUT);
+end;
+
+function TParams.GetConnectAttempts: integer;
+begin
+  result := ini.ReadInteger(Soptions, SconnectAttempts, DEFAULT_ATTEMPTS);
 end;
 
 function TParams.GetDeviceName: integer;
 begin
-  result := ini.ReadInteger(Soptions, sdeviceName, 0);
+  result := ini.ReadInteger(Soptions, sdeviceName, DEFAULT_DEVICE_NAME);
 end;
 
 function TParams.GetDirectory: string;
 begin
-  result := ini.ReadString(Soptions, Sdirectory, './backup');
+  result := ini.ReadString(Soptions, Sdirectory, DEFAULT_BACK_DIRECTORY);
 end;
 
 function TParams.GetExtension: string;
 begin
-  result := ini.ReadString(Soptions, Sextension, '.bin');
+  result := ini.ReadString(Soptions, Sextension, DEFAULT_EXTENSION);
 end;
 
 function TParams.GetFilenameFormat: integer;
 begin
-  result := ini.ReadInteger(Soptions, SfilenameFormat, 0);
+  result := ini.ReadInteger(Soptions, SfilenameFormat, DEFAULT_FILENAME_FORMAT);
 end;
 
 function TParams.GetPassword: string;
 begin
-  result := ini.ReadString(Soptions, Spassword, '');
+  result := ini.ReadString(Soptions, Spassword, DEFAULT_PASSWORD);
 end;
 
 function TParams.GetPort: integer;
 begin
-  result := ini.ReadInteger(Soptions, Sport, 1883);
+  result := ini.ReadInteger(Soptions, Sport, DEFAULT_PORT);
 end;
 
 function TParams.GetTopic: string;
 begin
-  result := ini.ReadString(Soptions, Stopic, 'tasmotas');
+  result := ini.ReadString(Soptions, Stopic, DEFAULT_TOPIC);
 end;
 
 function TParams.GetUser: string;
 begin
-  result := ini.ReadString(Soptions, Suser, '');
+  result := ini.ReadString(Soptions, Suser, DEFAULT_USER);
+end;
+
+procedure TParams.SetConnectAttempts(AValue: integer);
+begin
+  ini.writeInteger(Soptions, SconnectAttempts, AValue);
 end;
 
 procedure TParams.SetConnectTimeout(AValue: integer);
@@ -184,7 +213,6 @@ end;
 procedure TParams.SetPassword(AValue: string);
 begin
   ini.WriteString(Soptions, Spassword, AValue);
-
 end;
 
 procedure TParams.SetPort(AValue: integer);
@@ -195,13 +223,11 @@ end;
 procedure TParams.SetTopic(AValue: string);
 begin
   ini.WriteString(Soptions, Stopic, AValue);
-
 end;
 
 procedure TParams.SetUser(AValue: string);
 begin
   ini.WriteString(Soptions, Suser, AValue);
-
 end;
 
 constructor TParams.create;
