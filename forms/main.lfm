@@ -14,7 +14,7 @@ object MainForm: TMainForm
     Height = 298
     Top = 0
     Width = 421
-    PageIndex = 0
+    PageIndex = 1
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
@@ -285,6 +285,20 @@ object MainForm: TMainForm
         OnHeaderSized = GridHeaderSized
         OnSelectCell = DeviceGridSelectCell
       end
+      object Back2Button: TButton
+        AnchorSideTop.Control = Next2Button
+        AnchorSideTop.Side = asrCenter
+        AnchorSideRight.Control = Next2Button
+        Left = 259
+        Height = 25
+        Top = 267
+        Width = 75
+        Anchors = [akTop, akRight]
+        BorderSpacing.Right = 6
+        Caption = 'Back'
+        OnClick = Back2ButtonClick
+        TabOrder = 3
+      end
     end
     object Page3: TPage
       object DirectoryEdit: TDirectoryEdit
@@ -315,10 +329,10 @@ object MainForm: TMainForm
         Left = 12
         Height = 14
         Top = 6
-        Width = 111
+        Width = 122
         BorderSpacing.Left = 12
         BorderSpacing.Top = 6
-        Caption = 'Backup Directory'
+        Caption = 'Backup parameters'
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
@@ -519,12 +533,13 @@ object MainForm: TMainForm
         end
       end
       object Label16: TLabel
-        AnchorSideTop.Control = RadioButton2
+        AnchorSideTop.Control = ConnectAttemptsEdit
+        AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Page3
         AnchorSideRight.Side = asrBottom
         Left = 312
         Height = 14
-        Top = 167
+        Top = 192
         Width = 103
         Anchors = [akTop, akRight]
         BorderSpacing.Top = 8
@@ -537,16 +552,44 @@ object MainForm: TMainForm
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Label16
         AnchorSideRight.Side = asrBottom
-        Left = 328
+        Left = 340
         Height = 27
-        Top = 187
-        Width = 87
+        Top = 212
+        Width = 75
         Anchors = [akTop, akRight]
         BorderSpacing.Top = 6
         MaxValue = 30000
         MinValue = 1000
         TabOrder = 9
-        Value = 3000
+        Value = 4000
+      end
+      object Label17: TLabel
+        AnchorSideTop.Control = RadioButton1
+        AnchorSideTop.Side = asrCenter
+        AnchorSideRight.Control = Page3
+        AnchorSideRight.Side = asrBottom
+        Left = 312
+        Height = 14
+        Top = 137
+        Width = 103
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Right = 6
+        Caption = 'Connect Attempts'
+        ParentColor = False
+      end
+      object ConnectAttemptsEdit: TSpinEdit
+        AnchorSideTop.Control = Label17
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = Label17
+        AnchorSideRight.Side = asrBottom
+        Left = 352
+        Height = 27
+        Top = 157
+        Width = 63
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Top = 6
+        TabOrder = 10
+        Value = 2
       end
     end
     object Page4: TPage
@@ -573,28 +616,28 @@ object MainForm: TMainForm
         Left = 12
         Height = 14
         Top = 6
-        Width = 91
+        Width = 93
         BorderSpacing.Left = 12
         BorderSpacing.Top = 6
-        Caption = 'Backups to %s'
+        Caption = 'Backup results'
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
       end
       object ResGrid: TStringGrid
         AnchorSideLeft.Control = Page4
-        AnchorSideTop.Control = Label12
+        AnchorSideTop.Control = Label18
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Page4
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = OptionsButton
         Left = 6
-        Height = 229
-        Top = 32
+        Height = 207
+        Top = 54
         Width = 409
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Left = 6
-        BorderSpacing.Top = 12
+        BorderSpacing.Top = 8
         BorderSpacing.Right = 6
         BorderSpacing.Bottom = 6
         ColCount = 3
@@ -630,6 +673,31 @@ object MainForm: TMainForm
           'IP'
         )
       end
+      object Label18: TLabel
+        AnchorSideLeft.Control = Page4
+        AnchorSideTop.Control = Label12
+        AnchorSideTop.Side = asrBottom
+        Left = 6
+        Height = 14
+        Top = 32
+        Width = 59
+        BorderSpacing.Left = 6
+        BorderSpacing.Top = 12
+        Caption = 'Directory:'
+        ParentColor = False
+      end
+      object Label19: TLabel
+        AnchorSideLeft.Control = Label18
+        AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = Label18
+        Left = 71
+        Height = 14
+        Top = 32
+        Width = 49
+        BorderSpacing.Left = 6
+        Caption = 'Label19'
+        ParentColor = False
+      end
     end
     object Page5: TPage
       OnBeforeShow = Page5BeforeShow
@@ -638,14 +706,14 @@ object MainForm: TMainForm
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = Page5
         AnchorSideBottom.Side = asrBottom
-        Left = 340
-        Height = 25
-        Top = 267
-        Width = 75
+        Left = 305
+        Height = 30
+        Top = 262
+        Width = 110
         Anchors = [akRight, akBottom]
         BorderSpacing.Right = 6
         BorderSpacing.Bottom = 6
-        Caption = 'Save'
+        Caption = 'Save selected'
         OnClick = SaveButtonClick
         TabOrder = 0
       end
@@ -655,24 +723,24 @@ object MainForm: TMainForm
         Left = 12
         Height = 14
         Top = 6
-        Width = 55
+        Width = 51
         BorderSpacing.Left = 12
         BorderSpacing.Top = 6
-        Caption = 'Defaults'
+        Caption = 'Options'
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
       end
       object OptionsGrid: TStringGrid
         AnchorSideLeft.Control = Page5
-        AnchorSideTop.Control = Label14
+        AnchorSideTop.Control = CheckBox2
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Page5
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = SaveButton
         Left = 6
-        Height = 229
-        Top = 32
+        Height = 189
+        Top = 67
         Width = 409
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Left = 6
@@ -697,11 +765,39 @@ object MainForm: TMainForm
         FixedCols = 0
         Flat = True
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goSmoothScroll, goCellEllipsis]
-        RowCount = 12
+        RowCount = 13
         TabOrder = 1
         OnClick = GridClick
         OnHeaderSized = GridHeaderSized
         OnSelectCell = DeviceGridSelectCell
+      end
+      object CheckBox2: TCheckBox
+        AnchorSideLeft.Control = Page5
+        AnchorSideTop.Control = Label14
+        AnchorSideTop.Side = asrBottom
+        Left = 6
+        Height = 23
+        Top = 32
+        Width = 43
+        BorderSpacing.Left = 6
+        BorderSpacing.Top = 12
+        Caption = 'All'
+        OnChange = CheckBox2Change
+        TabOrder = 2
+      end
+      object ResetButton: TButton
+        AnchorSideTop.Control = SaveButton
+        AnchorSideTop.Side = asrCenter
+        AnchorSideRight.Control = SaveButton
+        Left = 189
+        Height = 30
+        Top = 262
+        Width = 110
+        Anchors = [akTop, akRight]
+        BorderSpacing.Right = 6
+        Caption = 'Reset selected'
+        OnClick = ResetButtonClick
+        TabOrder = 3
       end
     end
   end

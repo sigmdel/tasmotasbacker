@@ -11,9 +11,9 @@ unit main;
   There is no need to install the mosquitto broker assuming access to
   an MQTT broker is available on the network.
 
-  See project source because the ctypes unit must be loaded at the start of
-  the program. Furthermore, the cthreads unit must be loaded first in
-  Linux systems. See the uses clause in the project source:
+  The ctypes unit must be loaded at the start of the program. Furthermore,
+  the cthreads unit must be loaded first in Linux systems. See the uses
+  clause in the project source:
 
     uses
       {$IFDEF UNIX}{$IFDEF UseCThreads}
@@ -22,13 +22,20 @@ unit main;
       ctypes, // needed by mosquitto
       ...
 
-  The  UseCThreads was defined by adding -dUseCThreads
-  Personalised Options of Compiler Options in Project Options
+  The  UseCThreads is defined by adding -dUseCThreads in the
+  Personalised Options of the Compiler Options in Project Options.
 *)
 
 {$mode objfpc}{$H+}
 
 interface
+
+// Set these defines to help in determining the timeout and retry
+// parameters of the HTTP request function
+// See log() function below
+//
+{ -- $DEFINE DEBUG_HTTP_REQUEST}
+{ -- $DEFINE DEBUG_BACKUP}
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
@@ -40,10 +47,16 @@ type
 
   TMainForm = class(TForm)
     ApplicationProperties1: TApplicationProperties;
+    Back2Button: TButton;
+    Label18: TLabel;
+    Label19: TLabel;
+    ResetButton: TButton;
+    CheckBox2: TCheckBox;
     DateFormatEdit: TComboBox;
     DeviceGrid: TStringGrid;
     Label15: TLabel;
     Label16: TLabel;
+    Label17: TLabel;
     Next1Button: TButton;
     Next2Button: TButton;
     OptionsButton: TButton;
@@ -60,6 +73,7 @@ type
     Label14: TLabel;
     Page5: TPage;
     OptionsGrid: TStringGrid;
+    ConnectAttemptsEdit: TSpinEdit;
     TimeoutEdit: TSpinEdit;
     TopicEdit: TEdit;
     HostEdit: TEdit;
@@ -89,6 +103,9 @@ type
     RadioButton2: TRadioButton;
     PortEdit: TSpinEdit;
     procedure ApplicationProperties1Idle(Sender: TObject; var Done: Boolean);
+    procedure Back2ButtonClick(Sender: TObject);
+    procedure ResetButtonClick(Sender: TObject);
+    procedure CheckBox2Change(Sender: TObject);
     procedure DateFormatEditChange(Sender: TObject);
     procedure DeviceGridSelectCell(Sender: TObject; aCol, aRow: Integer;
       var CanSelect: Boolean);
@@ -121,7 +138,7 @@ type
     updategrid: TObject;
     newdev: boolean;
     function GetExtension: string;
-    procedure GetDevices;
+    procedure GetDevicesFromMqttBroker;
     procedure UpdateCheckCount;
   public
 
@@ -133,18 +150,230 @@ var
 implementation
 
 uses
-  fileinfo, options, fphttpclient, mqttclass, mosquitto;
+  fileinfo, options, ssockets, fphttpclient, mqttclass, mosquitto;
 
 {$R *.lfm}
 
-procedure Delay(dt: DWORD);
+
+{$IFDEF DEBUG_HTTP_REQUEST}
+  {$DEFINE DO_LOG}
+{$ENDIF}
+
+{$IFDEF DEBUG_BACKUP}
+  {$DEFINE DO_LOG}
+{$ENDIF}
+
+{$IFDEF DO_LOG}
+
+// In Linux system, messages sent to the Log function are displayed
+// on the standard output. To see the output launch the utility in
+// a terminal, not from GUI file namanger.
+//
+// In Windows, messages  are saved to a log file named tasmotasbacker.log
+
 var
-  tcount : DWORD;
+  lastic: longint = 0;
+  logopened: boolean = false;
+
+procedure log(msg: string);
+var
+  tic: QWORD;
+  i: integer;
 begin
-  tcount := GetTickCount;
-  while (GetTickCount - tcount < dt) and (not Application.Terminated) do
+  tic := GetTickCount64;
+  if not logopened then begin
+     {$IFDEF MSWINDOWS}
+     close(StdOut);
+     assign(StdOut,  'tasmotasbacker.log');
+     rewrite(StdOut);
+     {$ENDIF}
+     writeln(StdOut, 'time':19, 'diff':8,'   ', 'message');
+     logopened := true;
+  end;
+  for i := 1 to length(msg) do
+    if (msg[i] < ' ') or (msg[i] > '~') then msg[i] := '?';
+  writeln(StdOut, timetostr(now), '.', tic, tic-lastic:8, '   ', msg);
+  lastic := tic;
+end;
+{$ENDIF}
+
+// kludge to give some time to the gui to update itself while
+// waiting for responses from the MQTT broker and HTTP requests
+procedure Delay(dt: QWORD);
+var
+  tcount : QWORD;
+begin
+  tcount := GetTickCount64;
+  while (GetTickCount64 - tcount < dt) and (not Application.Terminated) do
     Application.ProcessMessages;
 end;
+
+
+(*
+TSocketErrorType = (
+    seHostNotFound,          0
+    seCreationFailed,        1
+    seBindFailed,            2
+    seListenFailed,          3
+    seConnectFailed,         4
+    seConnectTimeOut,        5
+    seAcceptFailed,          6
+    seAcceptWouldBlock,      7
+    seIOTimeOut);            8
+
+
+function HttpRequest(const aURL: string; out code: integer; out rawdata: string; maxtries: integer = 3; backoff: integer = 4000): boolean;
+var
+  i: integer;
+  {$IFDEF DEBUG_HTTP_REQUEST}
+  gotE: boolean;
+  eclass: string;
+  emsg: string;
+  {$ENDIF}
+begin
+  {$IFDEF DEBUG_HTTP_REQUEST}
+  lastic := GetTickCount64;
+  log(Format('HttpRequest(url: %s, maxtries: %d, backoff: %d', [aURL, maxtries, backoff]));
+  eclass := '';
+  emsg := '';
+  {$ENDIF}
+  rawdata := '';
+  code := -1;
+  for i := 0 to maxtries-1 do begin
+    sleep(i*backoff);
+    with TFPHTTPClient.create(nil) do try
+      {$IFDEF DEBUG_HTTP_REQUEST}
+      gotE := false;
+      eclass := '';
+      emsg := '';
+      {$ENDIF}
+      try
+        KeepConnection := False;
+        ConnectTimeOut := backoff; //(i+1)*backoff;
+        rawdata := Get(aURL);
+        code := ResponseStatusCode;
+        {$IFDEF DEBUG_HTTP_REQUEST}
+        log(Format('  request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
+        {$ENDIF}
+        exit;
+      except
+        {$IFDEF DEBUG_HTTP_REQUEST}
+        On E: Exception do begin
+          gotE := true;
+          eclass := E.classname;
+          emsg := E.Message;
+          if E is ESocketError then
+            code := integer(ESocketError(E).Code)
+          else
+            code := ResponseStatusCode;
+        end;
+        {$ELSE}
+        On  E: ESocketError do
+          code := integer(E.Code);
+        else
+          code := ResponseStatusCode;
+        rawdata := ResponseStatusText;
+        {$ENDIF}
+      end;
+      {$IFDEF DEBUG_HTTP_REQUEST}
+      if gotE then
+        log(Format('  Exception class %s, message %s, code %d, try %d', [eclass, emsg, code, i+1]));
+      {$ENDIF};
+      if (code = 404) or (code = integer(seConnectFailed)) or (code = integer(seHostNotFound)) then begin
+        {$IFDEF DEBUG_HTTP_REQUEST}
+        log(Format('  request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
+        {$ENDIF}
+        exit;
+      end;
+      {$IFDEF DEBUG_HTTP_REQUEST}
+      log(Format('  http request attemp %d failed with code: %d', [i+1, code]));
+      {$ENDIF}
+    finally
+      result := code = 200;
+      Free;
+    end;
+  end;
+  {$IFDEF DEBUG_HTTP_SCAN}
+  log(Format('  http request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
+  {$ENDIF}
+end;
+*)
+
+function HttpRequest(const aURL: string; out code: integer; out rawdata: string; maxtries: integer = 3; backoff: integer = 4000): boolean;
+var
+  i: integer;
+  {$IFDEF DEBUG_HTTP_REQUEST}
+  gotE: boolean;
+  eclass: string;
+  emsg: string;
+  {$ENDIF}
+begin
+  {$IFDEF DEBUG_HTTP_REQUEST}
+  lastic := GetTickCount64;
+  log(Format('HttpRequest(url: %s, maxtries: %d, backoff: %d', [aURL, maxtries, backoff]));
+  {$ENDIF}
+  rawdata := '';
+  code := -1;
+  with TFPHTTPClient.create(nil) do try
+    KeepConnection := False;
+    ConnectTimeOut := backoff; //(i+1)*backoff;
+    for i := 0 to maxtries-1 do begin
+      delay(2);
+      {$IFDEF DEBUG_HTTP_REQUEST}
+      gotE := false;
+      eclass := '';
+      emsg := '';
+      rawdata := '';
+      {$ENDIF}
+      try
+        rawdata := Get(aURL);
+        code := ResponseStatusCode;
+        {$IFDEF DEBUG_HTTP_REQUEST}
+        log(Format('  request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
+        {$ENDIF}
+        exit;
+      except
+        {$IFDEF DEBUG_HTTP_REQUEST}
+        On E: Exception do begin
+          gotE := true;
+          eclass := E.classname;
+          emsg := E.Message;
+          if E is ESocketError then
+            code := integer(ESocketError(E).Code)
+          else
+            code := ResponseStatusCode;
+        end;
+        {$ELSE}
+        On  E: ESocketError do
+          code := integer(E.Code);
+        else
+          code := ResponseStatusCode;
+        rawdata := ResponseStatusText;
+        {$ENDIF}
+      end;
+      {$IFDEF DEBUG_HTTP_REQUEST}
+      if gotE then
+        log(Format('  Exception class %s, message %s, code %d, try %d', [eclass, emsg, code, i+1]));
+      {$ENDIF};
+      if (code = 404) or (code = integer(seConnectFailed)) or (code = integer(seHostNotFound)) then begin
+        {$IFDEF DEBUG_HTTP_REQUEST}
+        log(Format('  request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
+        {$ENDIF}
+        exit;
+      end;
+      {$IFDEF DEBUG_HTTP_REQUEST}
+      log(Format('  http request attemp %d failed with code: %d', [i+1, code]));
+      {$ENDIF}
+    end; // for loop
+  finally
+    result := code = 200;
+    Free;
+  end;
+  {$IFDEF DEBUG_HTTP_SCAN}
+  log(Format('  http request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
+  {$ENDIF}
+end;
+
 
 // mosquitto library log level
 const
@@ -156,19 +385,19 @@ const
   //MOSQ_LOG = MOSQ_LOG_NONE;
   {$ENDIF}
 
-  //Save a string as a file
-  procedure SaveStringToFile(const s, filename: string);
-  var
-    F: TextFile;
-  begin
-    AssignFile(F, filename);
-    try
-      ReWrite(F);
-      Write(F, s);
-    finally
-      CloseFile(F);
-    end;
+//Save a string as a file
+procedure SaveStringToFile(const s, filename: string);
+var
+  F: TextFile;
+begin
+  AssignFile(F, filename);
+  try
+    ReWrite(F);
+    Write(F, s);
+  finally
+    CloseFile(F);
   end;
+end;
 
 type
   TThisMQTTConnection = class(TMQTTConnection)
@@ -253,11 +482,58 @@ begin
   if newdev then begin
     UpdateCheckCount;
     newdev := false;
+    invalidate;
+    application.processMessages;
   end;
   if assigned(updategrid) then begin
     GridResize(updateGrid);
     updategrid := nil;
   end;
+end;
+
+procedure TMainForm.Back2ButtonClick(Sender: TObject);
+begin
+  DeviceGrid.RowCount := 1;
+
+  Notebook1.PageIndex := 0;
+end;
+
+procedure TMainForm.ResetButtonClick(Sender: TObject);
+var
+  i: integer;
+begin
+  for i := 1 to OptionsGrid.Rowcount-1 do begin
+    if OptionsGrid.cells[0, i] = '0' then
+       continue;
+    case i of
+       1: params.host := DEFAULT_HOST;
+       2: params.port := DEFAULT_PORT;
+       3: params.user := DEFAULT_USER;
+       4: params.password := DEFAULT_PASSWORD;
+       5: params.topic := DEFAULT_TOPIC;
+       6: params.directory := DEFAULT_BACK_DIRECTORY;
+       7: params.extension := DEFAULT_EXTENSION;
+       8: params.dateformat := DEFAUT_DATE_FORMAT;
+       9: params.filenameformat := DEFAULT_FILENAME_FORMAT;
+      10: params.devicename := DEFAULT_DEVICE_NAME;
+      11: params.connectattempts := DEFAULT_ATTEMPTS;
+      12: params.connecttimeout := DEFAULT_TIMEOUT;
+     end;
+  end;
+  close;
+end;
+
+procedure TMainForm.CheckBox2Change(Sender: TObject);
+var
+  b: string;
+  i: integer;
+begin
+  if CheckBox2.Checked then
+    b := '1'
+  else
+    b := '0';
+  for i := 0 to OptionsGrid.RowCount-1 do
+    OptionsGrid.cells[0, i] := b;
 end;
 
 procedure TMainForm.DateFormatEditChange(Sender: TObject);
@@ -313,17 +589,17 @@ procedure TMainForm.BackupButtonClick(Sender: TObject);
 var
   i: integer;
   ip, device, s1, s2: string;
-  httpclient: TFPHTTPClient;
   url, html: String;
   aRow: integer;
   resstring: string;
+  code, count: integer;
 begin
   Notebook1.PageIndex := 3;
   Notebook1.Invalidate;
   Notebook1.Update;
-  Label12.caption := Format(Label12.caption, [ExpandFilename(DirectoryEdit.Directory)]);
+  Label19.caption := ExpandFilename(DirectoryEdit.Directory);
   application.ProcessMessages;
-
+  count := 0;
   for i := 1 to DeviceGrid.RowCount-1 do begin
     ip := trim(DeviceGrid.cells[1, i]);
     if radioButton3.checked then
@@ -347,41 +623,26 @@ begin
        end;
        device := Format('%s%s%s-%s%s',
          [DirectoryEdit.Directory,  DirectorySeparator, s1, s2, GetExtension]);
-       ForceDirectories(DirectoryEdit.Directory);
+       if count = 0 then
+         ForceDirectories(DirectoryEdit.Directory);
        url := 'http://' + ip + '/dl';
        html := '';
-       {$IFNDEF MSWINDOWS}
-       write('reading ', url);
+       {$IFDEF DEBUG_BACKUP}
+       log('Backup - reading '+ url);
        {$ENDIF}
-       httpclient := TFPHttpClient.Create(Nil);
-       try
-         httpclient.ConnectTimeout := TimeoutEdit.value; // default is 3000
-         try
-           html := httpclient.Get(url);
-           if html <> '' then begin
-             SaveStringToFile(html, device);
-             {$IFNDEF MSWINDOWS}
-             writeln(' saved to ', device);
-             {$ENDIF}
-             resstring := Format('saved to %s', [extractFilename(device)]);
-           end
-           else begin
-             {$IFNDEF MSWINDOWS}
-             writeln('get error');
-             {$ENDIF}
-             resstring := 'http get error';
-           end;
-         except
-           On E: Exception do begin
-             {$IFNDEF MSWINDOWS}
-             writeln(Format('Get error %s', [E.message]));
-             {$ENDIF}
-             resstring := E.message;
-           end;
-         end;
-       finally
-         httpclient.free;
+
+       if HttpRequest(url, code, html, ConnectAttemptsEdit.value,
+         TimeoutEdit.value) and (html <> '') then begin
+         SaveStringToFile(html, device);
+         {$IFDEF DEBUG_BACKUP}
+         log(' Saved to ' + device);
+         {$ENDIF}
+         resstring := Format('saved to %s', [extractFilename(device)]);
+       end
+       else begin
+         resstring := Format('http error %d', [code]);
        end;
+       inc(count);
      end;
      ResGrid.Cells[2, aRow] := resstring;
      ResGrid.invalidate;
@@ -446,7 +707,8 @@ begin
   TimeoutEdit.Value := params.connecttimeout;
 end;
 
-procedure TMainForm.GetDevices;
+
+procedure TMainForm.GetDevicesFromMqttBroker;
 var
   sl: TStringList;
   i: integer;
@@ -548,8 +810,10 @@ end;
 
 procedure TMainForm.Next1ButtonClick(Sender: TObject);
 begin
-  GetDevices;
   Notebook1.PageIndex := 1;
+  Notebook1.invalidate;
+  Delay(2);
+  GetDevicesFromMqttBroker;
 end;
 
 procedure TMainForm.Next2ButtonClick(Sender: TObject);
@@ -633,12 +897,20 @@ begin
     else
       cells[0, 10] := '1';
 
-    cells[1, 11] := 'Connect Timepout';
-    cells[2, 11] := TimeoutEdit.Text;
-    if TimeOutEdit.value = params.connecttimeout then
+    cells[1, 11] := 'Connect Attempts';
+    cells[2, 11] := ConnectAttemptsEdit.Text;
+    if ConnectAttemptsEdit.value = params.connectattempts then
       cells[0, 11] := '0'
     else
       cells[0, 11] := '1';
+
+  cells[1, 12] := 'Connect Timepout';
+  cells[2, 12] := TimeoutEdit.Text;
+  if TimeOutEdit.value = params.connecttimeout then
+    cells[0, 12] := '0'
+  else
+    cells[0, 12] := '1';
+
   end;
   Notebook1.PageIndex := 4;
 end;
@@ -672,7 +944,8 @@ begin
             params.devicename := 0
           else
             params.devicename := 1;
-      11: params.connecttimeout := TimeoutEdit.value;
+      11: params.connectattempts := ConnectAttemptsEdit.value;
+      12: params.connecttimeout := TimeoutEdit.value;
      end;
   end;
   close;
@@ -688,5 +961,11 @@ begin
   label11.Caption := Format('%d devices checked / %d total', [checkcount, DeviceGrid.RowCount-1]);
 end;
 
+
+{$IFDEF MSWINDOWS}{$IFDEF DO_LOG}
+finalization
+  if logopened then
+    close(StdOut);
+{$ENDIF}{$ENDIF}
 end.
 
