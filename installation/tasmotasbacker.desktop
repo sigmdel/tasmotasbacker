@@ -1,7 +1,7 @@
 #!/usr/bin/env xdg-open
 
 [Desktop Entry]
-Version=0.3.3
+Version=0.3.4
 Encoding=UTF-8
 Type=Application
 Exec=/home/$USER/.local/bin/tasmotasbacker/tasmotasbacker

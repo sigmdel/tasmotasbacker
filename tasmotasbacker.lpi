@@ -12,11 +12,12 @@
       <XPManifest>
         <DpiAware Value="True"/>
       </XPManifest>
+      <Icon Value="0"/>
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MinorVersionNr Value="3"/>
-      <RevisionNr Value="3"/>
+      <RevisionNr Value="4"/>
       <StringTable CompanyName="sigmdel.ca" LegalCopyright="0BDS" OriginalFilename="tasmotasbacker" ProductName="Tasmotas Backer"/>
     </VersionInfo>
     <BuildModes Count="3">
