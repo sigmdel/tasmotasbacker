@@ -1,6 +1,6 @@
 # tasmotasbacker : Tamotas Backer
 
-**Version 0.3.4** (July 5, 2021)
+**Version 0.3.5** (July 5, 2021)
 
 A utility that can back up the configuration of all Tasmota devices that share a common MQTT topic. It uses the [Eclipse mosquitto](https://mosquitto.org/) library to communicate with the MQTT broker to obtain a list of IP addresses of Tasmota devices connected to the broker.
 
@@ -19,11 +19,12 @@ A utility that can back up the configuration of all Tasmota devices that share a
 - [3. Testing](#3-testing)
 - [4. Installation and Releases](#4-installation-and-releases)
 - [5. Program Options](#5-program-options)
-- [6. WARNINGS](#6-warnings)
-    - [6.1. Beta Version](#61-beta-version)
-    - [6.2. Security](#62-security)
-- [7. Acknowledgment](#7-acknowledgment)
-- [8. Licence](#8-licence)
+- [6. Usage](#6-usage)
+- [7. WARNINGS](#7-warnings)
+    - [7.1. Beta Version](#71-beta-version)
+    - [7.2. Security](#72-security)
+- [8. Acknowledgment](#8-acknowledgment)
+- [9. Licence](#9-licence)
 
 <!-- /TOC -->
 
@@ -85,9 +86,9 @@ The repository is self-contained (except for the mosquitto library of course), s
 
 When compiling a final version, it would be advisable to heed the following advice.
 
-1.  Modify the default password encryption key 'DEFAULT_KEY' in the `units/pwd.pas` file. That way it will not be easy for any one of the vast number of users of this application to read to gain access to a system to read the configuration file file and theu obtain the MQTT broker password. See 5.1. Security Warning for more details.
+1.  Modify the default password encryption key `DEFAULT_KEY` in the `units/pwd.pas` file. That way it will not be easy for any one of the numerous users of this application to gain access to a system to read the configuration file and then obtain the MQTT broker password. See [7.2. Security](#72-security) for more details.
 
-2.  Add an application icon. Select `Load Icon` in `Project / Project Options` in the Lazarus IDE. The `tasmotabacker.png` image the `images` directory can be used. .
+2.  Add an application icon. Select `Load Icon` in `Project / Project Options` in the Lazarus IDE. The `tasmotabacker.png` image in the `images` directory can be used .
 
 3.  Compile the release version. Select the `Release` build mode in `Project / Project Options / Compiler Options` in the Lazarus IDE. This will reduce the size of the executable by an order of magnitude.
 
@@ -106,24 +107,28 @@ Details about installation of an application in Windows are unfortunately not pr
 
 ## 5. Program Options
 
-
-In Linux, the program parameters are saved in the `ini` configuration file named  `~/.config/sigmdel/tasmotabacker/options.ini` where `~` is the user home directory. So fully expanded file name is
+In Linux, the program parameters are saved in the `ini` configuration file named  `~/.config/sigmdel/tasmotabacker/options.ini` where `~` is the user home directory. So the fully expanded file name is
 <pre> /home/&lt;<i>user</i>&gt;/.config/sigmdel/tasmotasbacker/options.ini</pre>
 
 In Windows 10, the file is saved in the local `AppData` folder :
 <pre>  C:\Users\&lt;<i>user</i>&gt;\AppData\Local\sigmdel\tasmotasbacker\options.ini</pre>
 
-## 6. WARNINGS
+## 6. Usage
 
-### 6.1. Beta Version
+Information on how to use the program can be found on this site: [DIY Tasmota Backups](https://sigmdel.ca/michel/ha/tasmota/tasmota_backups_en.html).
+
+
+## 7. WARNINGS
+
+### 7.1. Beta Version
 
 This is a beta version. While it does work, there are rough edges.
 
 Because there can be timeouts when obtaining the configuration of multiple Tasmota devices, two options have been added: a timeout option and a retry option. The default timeout, 4 seconds (4000 ms), usually works very well on a system with a 4th generation i7 CPU running Linux Mint 20.1. However the timeout had to be increased to 5 or even 6 seconds (5000-6000 ms) on a system with a 4th generation i5 running Windows 11 connected to the same local area network.
 
-If you compile the program, then there are a couple of directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. This can be useful when trying to set default timeout and retries values. If using a binary release, then adjust the `Connect Attempts` and `Connect Timeout` fields in the `Backup parameters` sheet. 
+If you compile the program, then there are a couple of directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. This can be useful when trying to set default timeout and retries values. If using a binary release, then adjust the `Connect attempts` and `Connect timeout` fields in the `Backup parameters` sheet. 
 
-### 6.2. Security
+### 7.2. Security
 
 Prior to version 0.3.3, the MQTT broker password was stored in plain text in the configuration file. Do not save the MQTT broker password in the `Options` screen in these older versions.
 
@@ -131,7 +136,7 @@ A quick fix was added in version 0.3.3 to encrypt the password. A default encryp
 
 Note that the MQTT user and password are transmitted in plain text over an HTTP connection, so truly secure handling of the MQTT password will have to wait until communication with the broker using the HTTPS protocol is implemented.
 
-## 7. Acknowledgment
+## 8. Acknowledgment
 
 Obviously, this utility would not have been possible without 
 
@@ -141,7 +146,7 @@ Obviously, this utility would not have been possible without
 
 Useful information was obtained from others. Where possible, acknowledgment and references are provided in the source code.
 
-## 8. Licence
+## 9. Licence
 
 The [Eclipse Mosquitto](https://github.com/eclipse/mosquitto) project is dual-licensed under the Eclipse Public License 2.0 and the
 Eclipse Distribution License 1.0.

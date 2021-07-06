@@ -17,7 +17,7 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MinorVersionNr Value="3"/>
-      <RevisionNr Value="4"/>
+      <RevisionNr Value="5"/>
       <StringTable CompanyName="sigmdel.ca" LegalCopyright="0BDS" OriginalFilename="tasmotasbacker" ProductName="Tasmotas Backer"/>
     </VersionInfo>
     <BuildModes Count="3">
