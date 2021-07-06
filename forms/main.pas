@@ -39,7 +39,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  Spin, EditBtn, Grids;
+  Spin, EditBtn, Grids, Menus;
 
 type
 
@@ -51,7 +51,12 @@ type
     ImageList1: TImageList;
     Label18: TLabel;
     Label19: TLabel;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    N2: TMenuItem;
     PasswordEdit: TEditButton;
+    PopupMenu1: TPopupMenu;
     ResetButton: TButton;
     CheckBox2: TCheckBox;
     DateFormatEdit: TComboBox;
@@ -105,7 +110,12 @@ type
     PortEdit: TSpinEdit;
     procedure ApplicationProperties1Idle(Sender: TObject; var Done: Boolean);
     procedure Back2ButtonClick(Sender: TObject);
+    procedure MenuItem1Click(Sender: TObject);
+    procedure MenuItem2Click(Sender: TObject);
+    procedure MenuItem3Click(Sender: TObject);
     procedure PasswordEditButtonClick(Sender: TObject);
+    procedure PopupMenu1Close(Sender: TObject);
+    procedure PopupMenu1Popup(Sender: TObject);
     procedure ResetButtonClick(Sender: TObject);
     procedure CheckBox2Change(Sender: TObject);
     procedure DateFormatEditChange(Sender: TObject);
@@ -133,8 +143,13 @@ type
     procedure GridHeaderSized(Sender: TObject; IsColumn: Boolean;
       Index: Integer);
     procedure GridResize(Sender: TObject);
+    procedure ResGridDblClick(Sender: TObject);
+    procedure ResGridMouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure SaveButtonClick(Sender: TObject);
   private
+    popx: integer;
+    popy: integer;
     currentCol: integer;
     resizinggrid: boolean;
     updategrid: TObject;
@@ -142,6 +157,7 @@ type
     function GetExtension: string;
     procedure GetDevicesFromMqttBroker;
     procedure UpdateCheckCount;
+    procedure CopyResGridToClipbrd(delim: char);
   public
 
   end;
@@ -152,7 +168,7 @@ var
 implementation
 
 uses
-  fileinfo, options, ssockets, fphttpclient, mqttclass, mosquitto;
+  clipbrd, fileinfo, options, ssockets, fphttpclient, mqttclass, mosquitto;
 
 {$R *.lfm}
 
@@ -503,6 +519,27 @@ begin
   Notebook1.PageIndex := 0;
 end;
 
+procedure TMainForm.MenuItem1Click(Sender: TObject);
+var
+  delim: char;
+begin
+  if MenuItem3.checked then
+    delim := #9
+  else
+    delim := ',';
+  CopyResGridToClipbrd(delim);
+end;
+
+procedure TMainForm.MenuItem2Click(Sender: TObject);
+begin
+  PopupMenu1.popup(popx, popy);
+end;
+
+procedure TMainForm.MenuItem3Click(Sender: TObject);
+begin
+  PopupMenu1.popup(popx, popy);
+end;
+
 procedure TMainForm.PasswordEditButtonClick(Sender: TObject);
 begin
   with PasswordEdit do begin
@@ -515,6 +552,16 @@ begin
        ImageIndex := 1;
      end;
    end;
+end;
+
+procedure TMainForm.PopupMenu1Close(Sender: TObject);
+begin
+  PopupMenu1.tag := 0;
+end;
+
+procedure TMainForm.PopupMenu1Popup(Sender: TObject);
+begin
+  PopupMenu1.tag := 1;
 end;
 
 procedure TMainForm.ResetButtonClick(Sender: TObject);
@@ -685,6 +732,19 @@ begin
   UpdateCheckCount;
 end;
 
+procedure TMainForm.CopyResGridToClipbrd(delim: char);
+var
+  stream: TStringStream;
+begin
+  stream := TStringStream.create;
+  try
+    ResGrid.SaveToCSVStream(stream, delim);
+    Clipboard.AsText := stream.DataString;
+  finally
+    stream.free;
+  end;
+end;
+
 procedure TMainForm.DeviceListClickCheck(Sender: TObject);
 begin
   UpdateCheckCount;
@@ -828,6 +888,24 @@ begin
   end;
 end;
 
+
+procedure TMainForm.ResGridDblClick(Sender: TObject);
+begin
+  CopyResGridToClipbrd(#9);
+end;
+
+
+
+procedure TMainForm.ResGridMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if (PopupMenu1.tag = 0) and (Button = mbRight) then begin
+    popx := left + x;
+    popy := top + y;
+    PopupMenu1.PopUp(popx, popy);
+  end;
+end;
+
 procedure TMainForm.Next1ButtonClick(Sender: TObject);
 begin
   Notebook1.PageIndex := 1;
@@ -845,6 +923,10 @@ begin
 end;
 
 procedure TMainForm.OptionsButtonClick(Sender: TObject);
+
+const
+  pwddots = #$E2#$97#$8F#$E2#$97#$8F#$E2#$97#$8F#$E2#$97#$8F#$E2#$97#$8F
+            + #$E2#$97#$8F#$E2#$97#$8F#$E2#$97#$8F#$E2#$97#$8F;
 
   procedure setCb(row: integer; const current: string);
   var
@@ -875,8 +957,14 @@ begin
     setCb(3, params.user);
 
     cells[1, 4] := 'MQTT Password';
-    cells[2, 4] := PasswordEdit.Text;
-    setCb(4, params.password);
+    if length(PasswordEdit.Text) < 1 then
+      cells[2, 4] := ''
+    else
+      cells[2, 4] := pwddots;
+    if PasswordEdit.Text = params.password then
+      cells[0, 4] := '0'
+    else
+      cells[0, 4] := '1';
 
     cells[1, 5] := 'MQTT Topic';
     cells[2, 5] := TopicEdit.Text;
@@ -954,7 +1042,7 @@ begin
        1: params.host := OptionsGrid.cells[2, i];
        2: params.port := PortEdit.value;
        3: params.user := OptionsGrid.cells[2, i];
-       4: params.password := OptionsGrid.cells[2, i];
+       4: params.password := PasswordEdit.Text;
        5: params.topic := OptionsGrid.cells[2, i];
        6: params.directory := OptionsGrid.cells[2, i];
        7: params.extension := OptionsGrid.cells[2, i];

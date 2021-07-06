@@ -546,14 +546,14 @@ object MainForm: TMainForm
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Page3
         AnchorSideRight.Side = asrBottom
-        Left = 312
+        Left = 315
         Height = 14
         Top = 192
-        Width = 103
+        Width = 100
         Anchors = [akTop, akRight]
         BorderSpacing.Top = 8
         BorderSpacing.Right = 6
-        Caption = 'Connect Timeout'
+        Caption = 'Connect timeout'
         ParentColor = False
       end
       object TimeoutEdit: TSpinEdit
@@ -577,13 +577,13 @@ object MainForm: TMainForm
         AnchorSideTop.Side = asrCenter
         AnchorSideRight.Control = Page3
         AnchorSideRight.Side = asrBottom
-        Left = 306
+        Left = 308
         Height = 14
         Top = 137
-        Width = 109
+        Width = 107
         Anchors = [akTop, akRight]
         BorderSpacing.Right = 6
-        Caption = 'Connect Attempts'
+        Caption = 'Connect attempts'
         ParentColor = False
       end
       object ConnectAttemptsEdit: TSpinEdit
@@ -674,7 +674,9 @@ object MainForm: TMainForm
         RowCount = 1
         ScrollBars = ssVertical
         TabOrder = 0
+        OnDblClick = ResGridDblClick
         OnHeaderSized = GridHeaderSized
+        OnMouseDown = ResGridMouseDown
         Cells = (
           1
           0
@@ -902,5 +904,33 @@ object MainForm: TMainForm
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000
     }
+  end
+  object PopupMenu1: TPopupMenu
+    OnPopup = PopupMenu1Popup
+    OnClose = PopupMenu1Close
+    Left = 111
+    Top = 112
+    object MenuItem1: TMenuItem
+      Caption = 'Copy to clipboard '
+      OnClick = MenuItem1Click
+    end
+    object N2: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem2: TMenuItem
+      AutoCheck = True
+      Caption = 'Comma delimited'
+      GroupIndex = 1
+      RadioItem = True
+      OnClick = MenuItem2Click
+    end
+    object MenuItem3: TMenuItem
+      AutoCheck = True
+      Caption = 'Tab delimited'
+      Checked = True
+      GroupIndex = 1
+      RadioItem = True
+      OnClick = MenuItem3Click
+    end
   end
 end
