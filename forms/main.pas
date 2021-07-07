@@ -26,60 +26,6 @@ unit main;
   Personalised Options of the Compiler Options in Project Options.
 *)
 
-(*
-  About HTTP request timeouts:
-
-
-In principle, a call to HttpRequest with a 1500 milliseconds
-    HttpRequest('192.168.0.4', code, data, 2, 1500)
-will result in a call to
-    TSocketStream.SetIOTimeout(1500) in ssockets.
-
-Looking at
-
-    procedure TSocketStream.SetIOTimeout(AValue: Integer);
-
-    Var
-      E : Boolean;
-    {$ifdef windows}
-      opt: DWord;
-    {$endif windows}
-    {$ifdef unix}
-      time: ttimeval;
-    {$endif unix}
-
-    begin
-      if FIOTimeout=AValue then Exit;
-      FIOTimeout:=AValue;
-
-      {$ifdef windows}
-      opt := AValue;
-      E:=fpsetsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, @opt, 4)<>0;
-      if not E then
-        E:=fpsetsockopt(Handle, SOL_SOCKET, SO_SNDTIMEO, @opt, 4)<>0;
-      {$endif windows}
-      {$ifdef unix}
-      time.tv_sec:=avalue div 1000;
-      time.tv_usec:=(avalue mod 1000) * 1000;
-      E:=fpsetsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, @time, sizeof(time))<>0;
-    ...
-
-we see that in Unix time will be set as follows
-  time.tv_sec  = 1
-  time.tv_usec = 500000
-which does correspond to 1.5 seconds. However when timing the request it
-looks very much like the microseconds are completely ignored to the effective
-time out is
-  avalue div 1000 seconds
-which means the ms value is rounded down to the biggest multiple of 1000 equal or
-less than the ma value.
-
-So that means that  HttpRequest('192.168.0.4', code, data, 2, 250)
-will timeout immediately in Linux
-*)
-
-
-
 {$mode objfpc}{$H+}
 
 interface
@@ -105,6 +51,7 @@ type
     ImageList1: TImageList;
     Label18: TLabel;
     Label19: TLabel;
+    Label20: TLabel;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
@@ -112,7 +59,7 @@ type
     PasswordEdit: TEditButton;
     PopupMenu1: TPopupMenu;
     ResetButton: TButton;
-    CheckBox2: TCheckBox;
+    AllOptionsCheckBox: TCheckBox;
     DateFormatEdit: TComboBox;
     DeviceGrid: TStringGrid;
     Label15: TLabel;
@@ -136,6 +83,7 @@ type
     OptionsGrid: TStringGrid;
     DownloadAttemptsEdit: TSpinEdit;
     DownloadTimeoutEdit: TSpinEdit;
+    MqttTimeoutEdit: TSpinEdit;
     TopicEdit: TEdit;
     HostEdit: TEdit;
     Label11: TLabel;
@@ -171,7 +119,7 @@ type
     procedure PopupMenu1Close(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
     procedure ResetButtonClick(Sender: TObject);
-    procedure CheckBox2Change(Sender: TObject);
+    procedure AllOptionsCheckBoxChange(Sender: TObject);
     procedure DateFormatEditChange(Sender: TObject);
     procedure DeviceGridSelectCell(Sender: TObject; aCol, aRow: Integer;
       var CanSelect: Boolean);
@@ -280,97 +228,18 @@ begin
     Application.ProcessMessages;
 end;
 
-
-(*
+{
 TSocketErrorType = (
-    seHostNotFound,          0
-    seCreationFailed,        1
-    seBindFailed,            2
-    seListenFailed,          3
-    seConnectFailed,         4
-    seConnectTimeOut,        5
-    seAcceptFailed,          6
-    seAcceptWouldBlock,      7
-    seIOTimeOut);            8
-
-
-function HttpRequest(const aURL: string; out code: integer; out rawdata: string; maxtries: integer = 3; backoff: integer = 4000): boolean;
-var
-  i: integer;
-  {$IFDEF DEBUG_HTTP_REQUEST}
-  gotE: boolean;
-  eclass: string;
-  emsg: string;
-  {$ENDIF}
-begin
-  {$IFDEF DEBUG_HTTP_REQUEST}
-  lastic := GetTickCount64;
-  log(Format('HttpRequest(url: %s, maxtries: %d, backoff: %d', [aURL, maxtries, backoff]));
-  eclass := '';
-  emsg := '';
-  {$ENDIF}
-  rawdata := '';
-  code := -1;
-  for i := 0 to maxtries-1 do begin
-    sleep(i*backoff);
-    with TFPHTTPClient.create(nil) do try
-      {$IFDEF DEBUG_HTTP_REQUEST}
-      gotE := false;
-      eclass := '';
-      emsg := '';
-      {$ENDIF}
-      try
-        KeepConnection := False;
-        ConnectTimeOut := backoff; //(i+1)*backoff;
-        rawdata := Get(aURL);
-        code := ResponseStatusCode;
-        {$IFDEF DEBUG_HTTP_REQUEST}
-        log(Format('  request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
-        {$ENDIF}
-        exit;
-      except
-        {$IFDEF DEBUG_HTTP_REQUEST}
-        On E: Exception do begin
-          gotE := true;
-          eclass := E.classname;
-          emsg := E.Message;
-          if E is ESocketError then
-            code := integer(ESocketError(E).Code)
-          else
-            code := ResponseStatusCode;
-        end;
-        {$ELSE}
-        On  E: ESocketError do
-          code := integer(E.Code);
-        else
-          code := ResponseStatusCode;
-        rawdata := ResponseStatusText;
-        {$ENDIF}
-      end;
-      {$IFDEF DEBUG_HTTP_REQUEST}
-      if gotE then
-        log(Format('  Exception class %s, message %s, code %d, try %d', [eclass, emsg, code, i+1]));
-      {$ENDIF};
-      if (code = 404) or (code = integer(seConnectFailed)) or (code = integer(seHostNotFound)) then begin
-        {$IFDEF DEBUG_HTTP_REQUEST}
-        log(Format('  request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
-        {$ENDIF}
-        exit;
-      end;
-      {$IFDEF DEBUG_HTTP_REQUEST}
-      log(Format('  http request attemp %d failed with code: %d', [i+1, code]));
-      {$ENDIF}
-    finally
-      result := code = 200;
-      Free;
-    end;
-  end;
-  {$IFDEF DEBUG_HTTP_SCAN}
-  log(Format('  http request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
-  {$ENDIF}
-end;
-*)
-
+ 0  seHostNotFound,
+ 1  seCreationFailed,
+ 2  seBindFailed,
+ 3  seListenFailed,
+ 4  seConnectFailed,
+ 5  seConnectTimeOut,
+ 6  seAcceptFailed,
+ 7  seAcceptWouldBlock,
+ 8  seIOTimeOut);
+}
 function HttpRequest(const aURL: string; out code: integer; out rawdata: string; maxtries: integer = 3; backoff: integer = 4000): boolean;
 var
   i: integer;
@@ -445,7 +314,6 @@ begin
   log(Format('  http request returns after %d tries with code = %d, data = %s', [i+1, code, copy(rawdata, 1, 64)]));
   {$ENDIF}
 end;
-
 
 // mosquitto library log level
 const
@@ -552,6 +420,19 @@ end;
 
 { TMainForm }
 
+procedure TMainForm.AllOptionsCheckBoxChange(Sender: TObject);
+var
+  b: string;
+  i: integer;
+begin
+  if AllOptionsCheckBox.Checked then
+    b := '1'
+  else
+    b := '0';
+  for i := 0 to OptionsGrid.RowCount-1 do
+    OptionsGrid.cells[0, i] := b;
+end;
+
 procedure TMainForm.ApplicationProperties1Idle(Sender: TObject;
   var Done: Boolean);
 begin
@@ -571,133 +452,6 @@ procedure TMainForm.Back2ButtonClick(Sender: TObject);
 begin
   DeviceGrid.RowCount := 1;
   Notebook1.PageIndex := 0;
-end;
-
-procedure TMainForm.MenuItem1Click(Sender: TObject);
-var
-  delim: char;
-begin
-  if MenuItem3.checked then
-    delim := #9
-  else
-    delim := ',';
-  CopyResGridToClipbrd(delim);
-end;
-
-procedure TMainForm.MenuItem2Click(Sender: TObject);
-begin
-  PopupMenu1.popup(popx, popy);
-end;
-
-procedure TMainForm.MenuItem3Click(Sender: TObject);
-begin
-  PopupMenu1.popup(popx, popy);
-end;
-
-procedure TMainForm.PasswordEditButtonClick(Sender: TObject);
-begin
-  with PasswordEdit do begin
-     if passwordchar = #0 then begin  // hide password
-       passwordchar := '*';
-       ImageIndex := 0;
-     end
-     else begin // show password
-       passwordchar := #0;
-       ImageIndex := 1;
-     end;
-   end;
-end;
-
-procedure TMainForm.PopupMenu1Close(Sender: TObject);
-begin
-  PopupMenu1.tag := 0;
-end;
-
-procedure TMainForm.PopupMenu1Popup(Sender: TObject);
-begin
-  PopupMenu1.tag := 1;
-end;
-
-procedure TMainForm.ResetButtonClick(Sender: TObject);
-var
-  i: integer;
-begin
-  for i := 1 to OptionsGrid.Rowcount-1 do begin
-    if OptionsGrid.cells[0, i] = '0' then
-       continue;
-    case i of
-       1: params.Host := DEFAULT_HOST;
-       2: params.Port := DEFAULT_PORT;
-       3: params.User := DEFAULT_USER;
-       4: params.Password := DEFAULT_PASSWORD;
-       5: params.Topic := DEFAULT_TOPIC;
-       6: params.Directory := DEFAULT_BACK_DIRECTORY;
-       7: params.Extension := DEFAULT_EXTENSION;
-       8: params.DateFormat := DEFAUT_DATE_FORMAT;
-       9: params.FilenameFormat := DEFAULT_FILENAME_FORMAT;
-      10: params.DeviceName := DEFAULT_DEVICE_NAME;
-      11: params.DownloadAttempts := DEFAULT_DOWNLOAD_ATTEMPTS;
-      12: params.DownloadTimeout := DEFAULT_DOWNLOAD_TIMEOUT;
-     end;
-  end;
-  close;
-end;
-
-procedure TMainForm.CheckBox2Change(Sender: TObject);
-var
-  b: string;
-  i: integer;
-begin
-  if CheckBox2.Checked then
-    b := '1'
-  else
-    b := '0';
-  for i := 0 to OptionsGrid.RowCount-1 do
-    OptionsGrid.cells[0, i] := b;
-end;
-
-procedure TMainForm.DateFormatEditChange(Sender: TObject);
-begin
-   DateEdit.DateOrder := TDateOrder(DateFormatEdit.ItemIndex + 1);
-end;
-
-procedure TMainForm.DeviceGridSelectCell(Sender: TObject; aCol, aRow: Integer;
-  var CanSelect: Boolean);
-begin
-   currentcol := aCol;
-   CanSelect := aCol = 0;
-end;
-
-procedure TMainForm.FormDestroy(Sender: TObject);
-begin
-  MqttClient.free;
-end;
-
-procedure TMainForm.FormResize(Sender: TObject);
-begin
-  if not resizinggrid then begin
-    resizinggrid := true;
-    {
-    try
-      GridResize(DeviceGrid);
-      GridResize(ResGrid);
-      GridResize(OptionsGrid);
-    finally
-      invalidate;
-    end;
-    }
-    try
-      case Notebook1.PageIndex of
-        1: GridResize(DeviceGrid);
-        3: GridResize(ResGrid);
-        4: GridResize(OptionsGrid);
-        else exit;
-      end;
-      invalidate;
-    finally
-      resizinggrid := false;
-    end;
-  end;
 end;
 
 procedure TMainForm.BackButtonClick(Sender: TObject);
@@ -806,6 +560,18 @@ begin
   end;
 end;
 
+procedure TMainForm.DateFormatEditChange(Sender: TObject);
+begin
+   DateEdit.DateOrder := TDateOrder(DateFormatEdit.ItemIndex + 1);
+end;
+
+procedure TMainForm.DeviceGridSelectCell(Sender: TObject; aCol, aRow: Integer;
+  var CanSelect: Boolean);
+begin
+   currentcol := aCol;
+   CanSelect := aCol = 0;
+end;
+
 procedure TMainForm.DeviceListClickCheck(Sender: TObject);
 begin
   UpdateCheckCount;
@@ -828,14 +594,15 @@ begin
     caption := Format('Tasmotas Backer [%d.%d.%d]', [Major,Minor,Revision])
   else
      caption := 'Tasmotas Backer';
-  HostEdit.Text := params.host;
-  PortEdit.value := params.port;
-  UserEdit.Text := params.user;
-  PasswordEdit.Text := params.password;
-  TopicEdit.Text := params.topic;
-  DirectoryEdit.directory := params.directory;
-  ExtensionEdit.text := params.extension;
-  DateFormatEdit.ItemIndex := params.dateformat;
+  HostEdit.Text := params.Host;
+  PortEdit.value := params.Port;
+  UserEdit.Text := params.User;
+  PasswordEdit.Text := params.Password;
+  TopicEdit.Text := params.Topic;
+  MqttTimeOutEdit.Value := params.MqttTimeout;
+  DirectoryEdit.directory := params.Directory;
+  ExtensionEdit.text := params.Extension;
+  DateFormatEdit.ItemIndex := params.Dateformat;
   DateEdit.DateOrder := TDateOrder(DateFormatEdit.ItemIndex + 1);
   if params.FilenameFormat = 0 then
     RadioButton1.Checked := true
@@ -849,6 +616,37 @@ begin
   DownloadTimeoutEdit.Value := params.DownloadTimeout;
 end;
 
+procedure TMainForm.FormDestroy(Sender: TObject);
+begin
+  MqttClient.free;
+end;
+
+procedure TMainForm.FormResize(Sender: TObject);
+begin
+  if not resizinggrid then begin
+    resizinggrid := true;
+    {
+    try
+      GridResize(DeviceGrid);
+      GridResize(ResGrid);
+      GridResize(OptionsGrid);
+    finally
+      invalidate;
+    end;
+    }
+    try
+      case Notebook1.PageIndex of
+        1: GridResize(DeviceGrid);
+        3: GridResize(ResGrid);
+        4: GridResize(OptionsGrid);
+        else exit;
+      end;
+      invalidate;
+    finally
+      resizinggrid := false;
+    end;
+  end;
+end;
 
 procedure TMainForm.GetDevicesFromMqttBroker;
 var
@@ -873,10 +671,10 @@ begin
     sl.DelimitedText := TopicEdit.Text;
     if sl.count < 1 then
       exit;
-    MqttClient := TThisMQTTConnection.Create('mqttClient', MqttConfig, MOSQ_LOG);
     try
-      MqttClient.AutoReconnect := true;
+      MqttClient := TThisMQTTConnection.Create('mqttClient', MqttConfig, MOSQ_LOG);
       MqttClient.OnMessage := @MqttClient.MessageHandler;
+      //MqttClient.AutoReconnect := true;
       MqttClient.Connect;
       MqttClient.Subscribe('stat/+/STATUS5', 0);
       newdev := true;
@@ -885,7 +683,7 @@ begin
         delay(5);
       end;
     except
-      // what ??
+      raise;
     end;
   finally
     sl.free;
@@ -913,24 +711,6 @@ begin
   end;
 end;
 
-procedure TMainForm.Page2BeforeShow(ASender: TObject; ANewPage: TPage;
-  ANewIndex: Integer);
-begin
-  updategrid := DeviceGrid;
-end;
-
-procedure TMainForm.Page4BeforeShow(ASender: TObject; ANewPage: TPage;
-  ANewIndex: Integer);
-begin
-  updategrid := ResGrid;
-end;
-
-procedure TMainForm.Page5BeforeShow(ASender: TObject; ANewPage: TPage;
-  ANewIndex: Integer);
-begin
-  updategrid := OptionsGrid;
-end;
-
 procedure TMainForm.GridHeaderSized(Sender: TObject; IsColumn: Boolean;
   Index: Integer);
 begin
@@ -950,31 +730,53 @@ begin
   end;
 end;
 
-
-procedure TMainForm.ResGridDblClick(Sender: TObject);
+procedure TMainForm.MenuItem1Click(Sender: TObject);
+var
+  delim: char;
 begin
-  CopyResGridToClipbrd(#9);
+  if MenuItem3.checked then
+    delim := #9
+  else
+    delim := ',';
+  CopyResGridToClipbrd(delim);
 end;
 
-
-
-procedure TMainForm.ResGridMouseDown(Sender: TObject; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure TMainForm.MenuItem2Click(Sender: TObject);
 begin
-  if (PopupMenu1.tag = 0) and (Button = mbRight) then begin
-    popx := left + x;
-    popy := top + y;
-    PopupMenu1.PopUp(popx, popy);
+  PopupMenu1.popup(popx, popy);
+end;
+
+procedure TMainForm.MenuItem3Click(Sender: TObject);
+begin
+  PopupMenu1.popup(popx, popy);
+end;
+
+procedure TcpPortAvailable(const host: string; port: integer; timeout: integer = 5000);
+begin
+  if timeout < 1000 then
+    timeout := 1000;
+  try
+    With TInetSocket.Create(Host, Port, timeout) do begin
+      Free;
+    end;
+  except
+    Raise Exception.createFmt('%s:%d not reachable', [host, port]);
   end;
 end;
 
 procedure TMainForm.Next1ButtonClick(Sender: TObject);
 begin
-  Notebook1.PageIndex := 1;
-  CheckBox1.SetFocus;
-  Notebook1.invalidate;
-  Delay(2);
-  GetDevicesFromMqttBroker;
+  screen.cursor := crHourglass;
+  try
+    TcpPortAvailable(HostEdit.Text, PortEdit.value, MqttTimeoutEdit.value*1000);
+    Notebook1.PageIndex := 1;
+    CheckBox1.SetFocus;
+    Notebook1.invalidate;
+    Delay(2);
+    GetDevicesFromMqttBroker;
+  finally
+    screen.cursor := crDefault;
+  end;
 end;
 
 procedure TMainForm.Next2ButtonClick(Sender: TObject);
@@ -1032,65 +834,154 @@ begin
     cells[2, 5] := TopicEdit.Text;
     setCb(5, params.topic);
 
-    cells[1, 6] := 'Backup directory';
-    cells[2, 6] := DirectoryEdit.Directory;
-    setCb(6, params.directory);
+    cells[1, 6] := 'MQTT timeout';
+    cells[2, 6] := MqttTimeoutEdit.Text;
+    if MqttTimeoutEdit.value = params.MqttTimeout then
+      cells[0, 6] := '0'
+    else
+      cells[0, 6] := '1';
 
-    cells[1, 7] := 'Backup extension';
-    cells[2, 7] := ExtensionEdit.Text;
-    setCb(7, params.extension);
+    cells[1, 7] := 'Backup directory';
+    cells[2, 7] := DirectoryEdit.Directory;
+    setCb(7, params.directory);
 
-    cells[1, 8] := 'Date format';
-    cells[2, 8] := DateformatEdit.Text;
+    cells[1, 8] := 'Backup extension';
+    cells[2, 8] := ExtensionEdit.Text;
+    setCb(8, params.extension);
+
+    cells[1, 9] := 'Date format';
+    cells[2, 9] := DateformatEdit.Text;
     if DateformatEdit.ItemIndex = params.dateformat then
-      cells[0, 8] := '0'
-    else
-      cells[0, 8] := '1';
-
-    cells[1, 9] := 'Filename format';
-    if radioButton1.Checked then
-      cells[2, 9] := ChangeFileExt(radiobutton1.caption, '')
-    else
-      cells[2, 9] := ChangeFileExt(radiobutton2.caption, '');
-    if (radioButton1.checked and (params.filenameformat = 0))
-    or (radioButton2.checked and (params.filenameformat = 1)) then
       cells[0, 9] := '0'
     else
       cells[0, 9] := '1';
 
-    cells[1, 10] := 'Device name';
-    if radioButton3.Checked then
-      cells[2, 10] := 'Topic'
+    cells[1, 10] := 'Filename format';
+    if radioButton1.Checked then
+      cells[2, 10] := ChangeFileExt(radiobutton1.caption, '')
     else
-      cells[2, 10] := 'Hostname';
-    if (radioButton3.checked and (params.devicename = 0))
-    or (radioButton4.checked and (params.devicename = 1)) then
+      cells[2, 10] := ChangeFileExt(radiobutton2.caption, '');
+    if (radioButton1.checked and (params.filenameformat = 0))
+    or (radioButton2.checked and (params.filenameformat = 1)) then
       cells[0, 10] := '0'
     else
       cells[0, 10] := '1';
 
-    cells[1, 11] := 'Download attempts';
-    cells[2, 11] := DownloadAttemptsEdit.Text;
-    if DownloadAttemptsEdit.value = params.DownloadAttempts then
+    cells[1, 11] := 'Device name';
+    if radioButton3.Checked then
+      cells[2, 11] := 'Topic'
+    else
+      cells[2, 11] := 'Hostname';
+    if (radioButton3.checked and (params.devicename = 0))
+    or (radioButton4.checked and (params.devicename = 1)) then
       cells[0, 11] := '0'
     else
       cells[0, 11] := '1';
 
-  cells[1, 12] := 'Download timeout';
-  cells[2, 12] := DownloadTimeoutEdit.Text;
-  if DownloadTimeoutEdit.value = params.DownloadTimeout then
-    cells[0, 12] := '0'
-  else
-    cells[0, 12] := '1';
+    cells[1, 12] := 'Download attempts';
+    cells[2, 12] := DownloadAttemptsEdit.Text;
+    if DownloadAttemptsEdit.value = params.DownloadAttempts then
+      cells[0, 12] := '0'
+    else
+      cells[0, 12] := '1';
 
+    cells[1, 13] := 'Download timeout';
+    cells[2, 13] := DownloadTimeoutEdit.Text;
+    if DownloadTimeoutEdit.value = params.DownloadTimeout then
+      cells[0, 13] := '0'
+    else
+      cells[0, 13] := '1';
   end;
   Notebook1.PageIndex := 4;
-  CheckBox2.SetFocus;
+  AllOptionsCheckBox.SetFocus;
+end;
+
+procedure TMainForm.Page2BeforeShow(ASender: TObject; ANewPage: TPage;
+  ANewIndex: Integer);
+begin
+  updategrid := DeviceGrid;
+end;
+
+procedure TMainForm.Page4BeforeShow(ASender: TObject; ANewPage: TPage;
+  ANewIndex: Integer);
+begin
+  updategrid := ResGrid;
+end;
+
+procedure TMainForm.Page5BeforeShow(ASender: TObject; ANewPage: TPage;
+  ANewIndex: Integer);
+begin
+  updategrid := OptionsGrid;
+end;
+
+procedure TMainForm.PasswordEditButtonClick(Sender: TObject);
+begin
+  with PasswordEdit do begin
+     if passwordchar = #0 then begin  // hide password
+       passwordchar := '*';
+       ImageIndex := 0;
+     end
+     else begin // show password
+       passwordchar := #0;
+       ImageIndex := 1;
+     end;
+   end;
+end;
+
+procedure TMainForm.PopupMenu1Close(Sender: TObject);
+begin
+  PopupMenu1.tag := 0;
+end;
+
+procedure TMainForm.PopupMenu1Popup(Sender: TObject);
+begin
+  PopupMenu1.tag := 1;
 end;
 
 procedure TMainForm.QuitButtonClick(Sender: TObject);
 begin
   close;
+end;
+
+procedure TMainForm.ResetButtonClick(Sender: TObject);
+var
+  i: integer;
+begin
+  for i := 1 to OptionsGrid.Rowcount-1 do begin
+    if OptionsGrid.cells[0, i] = '0' then
+       continue;
+    case i of
+       1: params.Host := DEFAULT_HOST;
+       2: params.Port := DEFAULT_PORT;
+       3: params.User := DEFAULT_USER;
+       4: params.Password := DEFAULT_PASSWORD;
+       5: params.Topic := DEFAULT_TOPIC;
+       6: params.MqttTimeout := DEFAULT_MQTT_TIMEOUT;
+       7: params.Directory := DEFAULT_BACK_DIRECTORY;
+       8: params.Extension := DEFAULT_EXTENSION;
+       9: params.DateFormat := DEFAUT_DATE_FORMAT;
+      10: params.FilenameFormat := DEFAULT_FILENAME_FORMAT;
+      11: params.DeviceName := DEFAULT_DEVICE_NAME;
+      12: params.DownloadAttempts := DEFAULT_DOWNLOAD_ATTEMPTS;
+      13: params.DownloadTimeout := DEFAULT_DOWNLOAD_TIMEOUT;
+     end;
+  end;
+  close;
+end;
+
+procedure TMainForm.ResGridDblClick(Sender: TObject);
+begin
+  CopyResGridToClipbrd(#9);
+end;
+
+procedure TMainForm.ResGridMouseDown(Sender: TObject; Button: TMouseButton;
+  Shift: TShiftState; X, Y: Integer);
+begin
+  if (PopupMenu1.tag = 0) and (Button = mbRight) then begin
+    popx := left + x;
+    popy := top + y;
+    PopupMenu1.PopUp(popx, popy);
+  end;
 end;
 
 procedure TMainForm.SaveButtonClick(Sender: TObject);
@@ -1101,24 +992,25 @@ begin
     if OptionsGrid.cells[0, i] = '0' then
        continue;
     case i of
-       1: params.host := OptionsGrid.cells[2, i];
-       2: params.port := PortEdit.value;
-       3: params.user := OptionsGrid.cells[2, i];
-       4: params.password := PasswordEdit.Text;
-       5: params.topic := OptionsGrid.cells[2, i];
-       6: params.directory := OptionsGrid.cells[2, i];
-       7: params.extension := OptionsGrid.cells[2, i];
-       8: params.dateformat := DateFormatEdit.ItemIndex;
-       9: if RadioButton1.Checked then
+       1: params.Host := OptionsGrid.cells[2, i];
+       2: params.Port := PortEdit.value;
+       3: params.User := OptionsGrid.cells[2, i];
+       4: params.Password := PasswordEdit.Text;
+       5: params.Topic := OptionsGrid.cells[2, i];
+       6: params.MqttTimeout := MqttTimeoutEdit.value;
+       7: params.directory := OptionsGrid.cells[2, i];
+       8: params.extension := OptionsGrid.cells[2, i];
+       9: params.dateformat := DateFormatEdit.ItemIndex;
+      10: if RadioButton1.Checked then
             params.filenameformat := 0
           else
             params.filenameformat := 1;
-      10: if RadioButton3.Checked then
+      11: if RadioButton3.Checked then
             params.devicename := 0
           else
             params.devicename := 1;
-      11: params.DownloadAttempts := DownloadAttemptsEdit.value;
-      12: params.DownloadTimeout := DownloadTimeoutEdit.value;
+      12: params.DownloadAttempts := DownloadAttemptsEdit.value;
+      13: params.DownloadTimeout := DownloadTimeoutEdit.value;
      end;
   end;
   close;

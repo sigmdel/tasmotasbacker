@@ -10,13 +10,12 @@ object MainForm: TMainForm
   OnDestroy = FormDestroy
   ParentBiDiMode = False
   Position = poScreenCenter
-  LCLVersion = '2.0.12.0'
   object Notebook1: TNotebook
     Left = 0
     Height = 298
     Top = 0
     Width = 421
-    PageIndex = 2
+    PageIndex = 0
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
@@ -188,6 +187,30 @@ object MainForm: TMainForm
         OnButtonClick = PasswordEditButtonClick
         PasswordChar = '*'
         TabOrder = 3
+      end
+      object Label20: TLabel
+        AnchorSideLeft.Control = Label2
+        AnchorSideTop.Control = MqttTimeoutEdit
+        AnchorSideTop.Side = asrCenter
+        Left = 6
+        Height = 14
+        Top = 203
+        Width = 53
+        Caption = 'Timeout:'
+        ParentColor = False
+      end
+      object MqttTimeoutEdit: TSpinEdit
+        AnchorSideTop.Control = TopicEdit
+        AnchorSideTop.Side = asrBottom
+        Left = 77
+        Height = 27
+        Top = 197
+        Width = 75
+        BorderSpacing.Top = 6
+        MaxValue = 300
+        MinValue = 1
+        TabOrder = 6
+        Value = 1
       end
     end
     object Page2: TPage
@@ -745,7 +768,7 @@ object MainForm: TMainForm
       end
       object OptionsGrid: TStringGrid
         AnchorSideLeft.Control = Page5
-        AnchorSideTop.Control = CheckBox2
+        AnchorSideTop.Control = AllOptionsCheckBox
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Page5
         AnchorSideRight.Side = asrBottom
@@ -777,13 +800,13 @@ object MainForm: TMainForm
         FixedCols = 0
         Flat = True
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goSmoothScroll, goCellEllipsis]
-        RowCount = 13
+        RowCount = 14
         TabOrder = 1
         OnClick = GridClick
         OnHeaderSized = GridHeaderSized
         OnSelectCell = DeviceGridSelectCell
       end
-      object CheckBox2: TCheckBox
+      object AllOptionsCheckBox: TCheckBox
         AnchorSideLeft.Control = Page5
         AnchorSideTop.Control = Label14
         AnchorSideTop.Side = asrBottom
@@ -794,7 +817,7 @@ object MainForm: TMainForm
         BorderSpacing.Left = 6
         BorderSpacing.Top = 12
         Caption = 'All'
-        OnChange = CheckBox2Change
+        OnChange = AllOptionsCheckBoxChange
         TabOrder = 0
       end
       object ResetButton: TButton

@@ -17,6 +17,7 @@ const
   DEFAULT_PASSWORD = '';
   DEFAULT_USER = '';
   DEFAULT_TOPIC = 'tasmotas, sonoffs';
+  DEFAULT_MQTT_TIMEOUT = 2;
   {$ENDIF}
 
   {$IFDEF INCLUDE_HTTP_OPTIONS}
@@ -53,11 +54,13 @@ type
     function GetUser: string;
     function GetPassword: string;
     function GetTopic: string;
+    function GetMqttTimeout: integer;
     procedure SetHost(AValue: string);
     procedure SetPort(AValue: integer);
     procedure SetUser(AValue: string);
     procedure SetPassword(AValue: string);
     procedure SetTopic(AValue: string);
+    procedure SetMqttTimeout(AValue: integer);
     {$ENDIF}
 
     {$IFDEF INCLUDE_HTTP_OPTIONS}
@@ -97,11 +100,12 @@ type
     destructor destroy; override;
 
     {$IFDEF INCLUDE_MQTT_OPTIONS}
-    property host: string read GetHost write SetHost;
-    property port: integer read GetPort write SetPort;
-    property user: string read GetUser write SetUser;
-    property password: string read GetPassword write SetPassword;
-    property topic: string read GetTopic write SetTopic;
+    property Host: string read GetHost write SetHost;
+    property Port: integer read GetPort write SetPort;
+    property User: string read GetUser write SetUser;
+    property Password: string read GetPassword write SetPassword;
+    property Topic: string read GetTopic write SetTopic;
+    property MqttTimeout: integer read GetMqttTimeout write SetMqttTimeout;
     {$ENDIF}
 
     {$IFDEF INCLUDE_HTTP_OPTIONS}
@@ -143,6 +147,7 @@ const
   Suser = 'User';
   Spassword = 'Password';
   Stopic = 'Topic';
+  SmqttTimeout = 'MqttTimeout';
   {$ENDIF}
 
   {$IFDEF INCLUDE_HTTP_OPTIONS}
@@ -210,6 +215,11 @@ begin
   result := ini.ReadString(Soptions, Stopic, DEFAULT_TOPIC);
 end;
 
+function TParams.GetMqttTimeout: integer;
+begin
+  result := ini.ReadInteger(Soptions, SmqttTimeout, DEFAULT_MQTT_TIMEOUT);
+end;
+
 procedure TParams.SetHost(AValue: string);
 begin
   ini.WriteString(Soptions, Shost, AValue);
@@ -233,6 +243,11 @@ end;
 procedure TParams.SetTopic(AValue: string);
 begin
   ini.WriteString(Soptions, Stopic, AValue);
+end;
+
+procedure TParams.SetMqttTimeout(AValue: integer);
+begin
+  ini.WriteInteger(Soptions, SmqttTimeout, AValue);
 end;
 
 {$ENDIF}
