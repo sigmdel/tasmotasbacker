@@ -26,6 +26,60 @@ unit main;
   Personalised Options of the Compiler Options in Project Options.
 *)
 
+(*
+  About HTTP request timeouts:
+
+
+In principle, a call to HttpRequest with a 1500 milliseconds
+    HttpRequest('192.168.0.4', code, data, 2, 1500)
+will result in a call to
+    TSocketStream.SetIOTimeout(1500) in ssockets.
+
+Looking at
+
+    procedure TSocketStream.SetIOTimeout(AValue: Integer);
+
+    Var
+      E : Boolean;
+    {$ifdef windows}
+      opt: DWord;
+    {$endif windows}
+    {$ifdef unix}
+      time: ttimeval;
+    {$endif unix}
+
+    begin
+      if FIOTimeout=AValue then Exit;
+      FIOTimeout:=AValue;
+
+      {$ifdef windows}
+      opt := AValue;
+      E:=fpsetsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, @opt, 4)<>0;
+      if not E then
+        E:=fpsetsockopt(Handle, SOL_SOCKET, SO_SNDTIMEO, @opt, 4)<>0;
+      {$endif windows}
+      {$ifdef unix}
+      time.tv_sec:=avalue div 1000;
+      time.tv_usec:=(avalue mod 1000) * 1000;
+      E:=fpsetsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, @time, sizeof(time))<>0;
+    ...
+
+we see that in Unix time will be set as follows
+  time.tv_sec  = 1
+  time.tv_usec = 500000
+which does correspond to 1.5 seconds. However when timing the request it
+looks very much like the microseconds are completely ignored to the effective
+time out is
+  avalue div 1000 seconds
+which means the ms value is rounded down to the biggest multiple of 1000 equal or
+less than the ma value.
+
+So that means that  HttpRequest('192.168.0.4', code, data, 2, 250)
+will timeout immediately in Linux
+*)
+
+
+
 {$mode objfpc}{$H+}
 
 interface
@@ -34,7 +88,7 @@ interface
 // parameters of the HTTP request function
 // See log() function below
 //
-{  -- $DEFINE DEBUG_HTTP_REQUEST}
+{$DEFINE DEBUG_HTTP_REQUEST}
 {  -- $DEFINE DEBUG_BACKUP}
 
 uses
@@ -80,8 +134,8 @@ type
     Label14: TLabel;
     Page5: TPage;
     OptionsGrid: TStringGrid;
-    ConnectAttemptsEdit: TSpinEdit;
-    TimeoutEdit: TSpinEdit;
+    DownloadAttemptsEdit: TSpinEdit;
+    DownloadTimeoutEdit: TSpinEdit;
     TopicEdit: TEdit;
     HostEdit: TEdit;
     Label11: TLabel;
@@ -334,8 +388,8 @@ begin
   code := -1;
   with TFPHTTPClient.create(nil) do try
     KeepConnection := False;
-    ConnectTimeOut := backoff; //(i+1)*backoff;
     for i := 0 to maxtries-1 do begin
+      ConnectTimeOut := (i+1)*backoff;
       delay(2);
       {$IFDEF DEBUG_HTTP_REQUEST}
       gotE := false;
@@ -572,18 +626,18 @@ begin
     if OptionsGrid.cells[0, i] = '0' then
        continue;
     case i of
-       1: params.host := DEFAULT_HOST;
-       2: params.port := DEFAULT_PORT;
-       3: params.user := DEFAULT_USER;
-       4: params.password := DEFAULT_PASSWORD;
-       5: params.topic := DEFAULT_TOPIC;
-       6: params.directory := DEFAULT_BACK_DIRECTORY;
-       7: params.extension := DEFAULT_EXTENSION;
-       8: params.dateformat := DEFAUT_DATE_FORMAT;
-       9: params.filenameformat := DEFAULT_FILENAME_FORMAT;
-      10: params.devicename := DEFAULT_DEVICE_NAME;
-      11: params.connectattempts := DEFAULT_ATTEMPTS;
-      12: params.connecttimeout := DEFAULT_TIMEOUT;
+       1: params.Host := DEFAULT_HOST;
+       2: params.Port := DEFAULT_PORT;
+       3: params.User := DEFAULT_USER;
+       4: params.Password := DEFAULT_PASSWORD;
+       5: params.Topic := DEFAULT_TOPIC;
+       6: params.Directory := DEFAULT_BACK_DIRECTORY;
+       7: params.Extension := DEFAULT_EXTENSION;
+       8: params.DateFormat := DEFAUT_DATE_FORMAT;
+       9: params.FilenameFormat := DEFAULT_FILENAME_FORMAT;
+      10: params.DeviceName := DEFAULT_DEVICE_NAME;
+      11: params.DownloadAttempts := DEFAULT_DOWNLOAD_ATTEMPTS;
+      12: params.DownloadTimeout := DEFAULT_DOWNLOAD_TIMEOUT;
      end;
   end;
   close;
@@ -661,61 +715,68 @@ var
   code, count: integer;
 begin
   Notebook1.PageIndex := 3;
-  OptionsButton.setFocus;
   Notebook1.Invalidate;
   Notebook1.Update;
   Label19.caption := ExpandFilename(DirectoryEdit.Directory);
   application.ProcessMessages;
-  count := 0;
-  for i := 1 to DeviceGrid.RowCount-1 do begin
-    ip := trim(DeviceGrid.cells[1, i]);
-    if radioButton3.checked then
-      device := trim(DeviceGrid.cells[2, i])
-    else
-      device := trim(DeviceGrid.cells[3, i]);
-     aRow := ResGrid.RowCount;
-     ResGrid.RowCount := aRow + 1;
-     ResGrid.Cells[0, aRow] := ip;
-     ResGrid.Cells[1, aRow] := device;
-     if DeviceGrid.cells[0, i] = '0' then
-       resstring := 'not selected'
-     else begin
-       if radiobutton1.checked then begin
-         s1 := trim(device);
-         s2 := DateEdit.Text;
-       end
+  screen.Cursor := crHourglass;
+  OptionsButton.enabled := false;
+  try
+    count := 0;
+    for i := 1 to DeviceGrid.RowCount-1 do begin
+      ip := trim(DeviceGrid.cells[1, i]);
+      if radioButton3.checked then
+        device := trim(DeviceGrid.cells[2, i])
+      else
+        device := trim(DeviceGrid.cells[3, i]);
+       aRow := ResGrid.RowCount;
+       ResGrid.RowCount := aRow + 1;
+       ResGrid.Cells[0, aRow] := ip;
+       ResGrid.Cells[1, aRow] := device;
+       if DeviceGrid.cells[0, i] = '0' then
+         resstring := 'not selected'
        else begin
-         s1 := DateEdit.Text;
-         s2 := trim(device);
-       end;
-       device := Format('%s%s%s-%s%s',
-         [DirectoryEdit.Directory,  DirectorySeparator, s1, s2, GetExtension]);
-       if count = 0 then
-         ForceDirectories(DirectoryEdit.Directory);
-       url := 'http://' + ip + '/dl';
-       html := '';
-       {$IFDEF DEBUG_BACKUP}
-       log('Backup - reading '+ url);
-       {$ENDIF}
-
-       if HttpRequest(url, code, html, ConnectAttemptsEdit.value,
-         TimeoutEdit.value) and (html <> '') then begin
-         SaveStringToFile(html, device);
+         if radiobutton1.checked then begin
+           s1 := trim(device);
+           s2 := DateEdit.Text;
+         end
+         else begin
+           s1 := DateEdit.Text;
+           s2 := trim(device);
+         end;
+         device := Format('%s%s%s-%s%s',
+           [DirectoryEdit.Directory,  DirectorySeparator, s1, s2, GetExtension]);
+         if count = 0 then
+           ForceDirectories(DirectoryEdit.Directory);
+         url := 'http://' + ip + '/dl';
+         html := '';
          {$IFDEF DEBUG_BACKUP}
-         log(' Saved to ' + device);
+         log('Backup - reading '+ url);
          {$ENDIF}
-         resstring := Format('saved to %s', [extractFilename(device)]);
-       end
-       else begin
-         resstring := Format('http error %d', [code]);
+
+         if HttpRequest(url, code, html, DownloadAttemptsEdit.value,
+           DownloadTimeoutEdit.value*1000) and (html <> '') then begin
+           SaveStringToFile(html, device);
+           {$IFDEF DEBUG_BACKUP}
+           log(' Saved to ' + device);
+           {$ENDIF}
+           resstring := Format('saved to %s', [extractFilename(device)]);
+         end
+         else begin
+           resstring := Format('http error %d', [code]);
+         end;
+         inc(count);
        end;
-       inc(count);
-     end;
-     ResGrid.Cells[2, aRow] := resstring;
-     ResGrid.invalidate;
-     ResGrid.Update;
-     application.ProcessMessages;
+       ResGrid.Cells[2, aRow] := resstring;
+       ResGrid.invalidate;
+       ResGrid.Update;
+       application.ProcessMessages;
+    end;
+  finally
+    screen.Cursor := crDefault;
   end;
+  OptionsButton.enabled := true;
+  OptionsButton.setFocus;
 end;
 
 procedure TMainForm.CheckBox1Change(Sender: TObject);
@@ -784,7 +845,8 @@ begin
     RadioButton3.Checked := true
   else
     RadioButton4.Checked := true;
-  TimeoutEdit.Value := params.connecttimeout;
+  DownloadAttemptsEdit.Value := params.DownloadAttempts;
+  DownloadTimeoutEdit.Value := params.DownloadTimeout;
 end;
 
 
@@ -941,22 +1003,22 @@ const
 
 begin
   with OptionsGrid do begin
-    cells[1, 1] := 'MQTT Host';
+    cells[1, 1] := 'MQTT host';
     cells[2, 1] := HostEdit.Text;
     setCb(1, params.host);
 
-    cells[1, 2] := 'MQTT Port';
+    cells[1, 2] := 'MQTT port';
     cells[2, 2] := PortEdit.Text;
     if PortEdit.value = params.port then
       cells[0, 2] := '0'
     else
       cells[0, 2] := '1';
 
-    cells[1, 3] := 'MQTT User';
+    cells[1, 3] := 'MQTT user';
     cells[2, 3] := UserEdit.Text;
     setCb(3, params.user);
 
-    cells[1, 4] := 'MQTT Password';
+    cells[1, 4] := 'MQTT password';
     if length(PasswordEdit.Text) < 1 then
       cells[2, 4] := ''
     else
@@ -966,26 +1028,26 @@ begin
     else
       cells[0, 4] := '1';
 
-    cells[1, 5] := 'MQTT Topic';
+    cells[1, 5] := 'MQTT topic';
     cells[2, 5] := TopicEdit.Text;
     setCb(5, params.topic);
 
-    cells[1, 6] := 'Backup Directory';
+    cells[1, 6] := 'Backup directory';
     cells[2, 6] := DirectoryEdit.Directory;
     setCb(6, params.directory);
 
-    cells[1, 7] := 'Backup Extension';
+    cells[1, 7] := 'Backup extension';
     cells[2, 7] := ExtensionEdit.Text;
     setCb(7, params.extension);
 
-    cells[1, 8] := 'Date Format';
+    cells[1, 8] := 'Date format';
     cells[2, 8] := DateformatEdit.Text;
     if DateformatEdit.ItemIndex = params.dateformat then
       cells[0, 8] := '0'
     else
       cells[0, 8] := '1';
 
-    cells[1, 9] := 'Filename Format';
+    cells[1, 9] := 'Filename format';
     if radioButton1.Checked then
       cells[2, 9] := ChangeFileExt(radiobutton1.caption, '')
     else
@@ -996,7 +1058,7 @@ begin
     else
       cells[0, 9] := '1';
 
-    cells[1, 10] := 'Device Name';
+    cells[1, 10] := 'Device name';
     if radioButton3.Checked then
       cells[2, 10] := 'Topic'
     else
@@ -1007,16 +1069,16 @@ begin
     else
       cells[0, 10] := '1';
 
-    cells[1, 11] := 'Connect Attempts';
-    cells[2, 11] := ConnectAttemptsEdit.Text;
-    if ConnectAttemptsEdit.value = params.connectattempts then
+    cells[1, 11] := 'Download attempts';
+    cells[2, 11] := DownloadAttemptsEdit.Text;
+    if DownloadAttemptsEdit.value = params.DownloadAttempts then
       cells[0, 11] := '0'
     else
       cells[0, 11] := '1';
 
-  cells[1, 12] := 'Connect Timepout';
-  cells[2, 12] := TimeoutEdit.Text;
-  if TimeOutEdit.value = params.connecttimeout then
+  cells[1, 12] := 'Download timeout';
+  cells[2, 12] := DownloadTimeoutEdit.Text;
+  if DownloadTimeoutEdit.value = params.DownloadTimeout then
     cells[0, 12] := '0'
   else
     cells[0, 12] := '1';
@@ -1055,8 +1117,8 @@ begin
             params.devicename := 0
           else
             params.devicename := 1;
-      11: params.connectattempts := ConnectAttemptsEdit.value;
-      12: params.connecttimeout := TimeoutEdit.value;
+      11: params.DownloadAttempts := DownloadAttemptsEdit.value;
+      12: params.DownloadTimeout := DownloadTimeoutEdit.value;
      end;
   end;
   close;

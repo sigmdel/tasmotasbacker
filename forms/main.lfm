@@ -10,12 +10,13 @@ object MainForm: TMainForm
   OnDestroy = FormDestroy
   ParentBiDiMode = False
   Position = poScreenCenter
+  LCLVersion = '2.0.12.0'
   object Notebook1: TNotebook
     Left = 0
     Height = 298
     Top = 0
     Width = 421
-    PageIndex = 0
+    PageIndex = 2
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
@@ -238,10 +239,10 @@ object MainForm: TMainForm
         TabOrder = 0
       end
       object Label11: TLabel
-        AnchorSideLeft.Control = CheckBox1
-        AnchorSideLeft.Side = asrBottom
+        AnchorSideLeft.Control = Page2
+        AnchorSideLeft.Side = asrCenter
         AnchorSideTop.Control = CheckBox1
-        Left = 61
+        Left = 186
         Height = 14
         Top = 35
         Width = 49
@@ -341,7 +342,7 @@ object MainForm: TMainForm
         Width = 122
         BorderSpacing.Left = 12
         BorderSpacing.Top = 6
-        Caption = 'Backup parameters'
+        Caption = 'Backup Parameters'
         Font.Style = [fsBold]
         ParentColor = False
         ParentFont = False
@@ -542,59 +543,59 @@ object MainForm: TMainForm
         end
       end
       object Label16: TLabel
-        AnchorSideTop.Control = ConnectAttemptsEdit
+        AnchorSideTop.Control = DownloadAttemptsEdit
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Page3
         AnchorSideRight.Side = asrBottom
-        Left = 315
+        Left = 302
         Height = 14
         Top = 192
-        Width = 100
+        Width = 113
         Anchors = [akTop, akRight]
         BorderSpacing.Top = 8
         BorderSpacing.Right = 6
-        Caption = 'Connect timeout'
+        Caption = 'Download timeout'
         ParentColor = False
       end
-      object TimeoutEdit: TSpinEdit
+      object DownloadTimeoutEdit: TSpinEdit
         AnchorSideTop.Control = Label16
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Label16
         AnchorSideRight.Side = asrBottom
-        Left = 340
+        Left = 348
         Height = 27
         Top = 212
-        Width = 75
+        Width = 67
         Anchors = [akTop, akRight]
         BorderSpacing.Top = 6
-        MaxValue = 30000
-        MinValue = 1000
+        MaxValue = 300
+        MinValue = 1
         TabOrder = 8
-        Value = 4000
+        Value = 1
       end
       object Label17: TLabel
         AnchorSideTop.Control = RadioButton1
         AnchorSideTop.Side = asrCenter
         AnchorSideRight.Control = Page3
         AnchorSideRight.Side = asrBottom
-        Left = 308
+        Left = 295
         Height = 14
         Top = 137
-        Width = 107
+        Width = 120
         Anchors = [akTop, akRight]
         BorderSpacing.Right = 6
-        Caption = 'Connect attempts'
+        Caption = 'Download attempts'
         ParentColor = False
       end
-      object ConnectAttemptsEdit: TSpinEdit
+      object DownloadAttemptsEdit: TSpinEdit
         AnchorSideTop.Control = Label17
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = Label17
         AnchorSideRight.Side = asrBottom
-        Left = 352
+        Left = 348
         Height = 27
         Top = 157
-        Width = 63
+        Width = 67
         Anchors = [akTop, akRight]
         BorderSpacing.Top = 6
         TabOrder = 7
