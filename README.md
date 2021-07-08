@@ -113,6 +113,10 @@ In Linux, the program parameters are saved in the `ini` configuration file named
 In Windows 10, the file is saved in the local `AppData` folder :
 <pre>  C:\Users\&lt;<i>user</i>&gt;\AppData\Local\sigmdel\tasmotasbacker\options.ini</pre>
 
+Starting with version 0.3.6, all time out are measured in seconds; they were measured in milliseconds in previous versions. In the same version, two parameters, `ConnectAttempts` and `ConnectTimeout`, have been renamed `DownloadAttempts` and `DownloadTimeout` respectively. 
+
+If updating from a previous version, it may be simpler to delete the `ini` configuration file to avoid leaving orphaned entries in the file.
+
 ## 6. Usage
 
 Information on how to use the program can be found on this site: [DIY Tasmota Backups](https://sigmdel.ca/michel/ha/tasmota/tasmota_backups_en.html).
