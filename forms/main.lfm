@@ -200,6 +200,7 @@ object MainForm: TMainForm
         ParentColor = False
       end
       object MqttTimeoutEdit: TSpinEdit
+        AnchorSideLeft.Control = TopicEdit
         AnchorSideTop.Control = TopicEdit
         AnchorSideTop.Side = asrBottom
         Left = 77
