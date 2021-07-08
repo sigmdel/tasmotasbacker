@@ -61,9 +61,11 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dUseCThreads"/>
-            <OtherDefines Count="1">
+            <CustomOptions Value="-dUseCThreads
+-dINCLUDE_MQTT_OPTIONS"/>
+            <OtherDefines Count="2">
               <Define0 Value="UseCThreads"/>
+              <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
             </OtherDefines>
           </Other>
         </CompilerOptions>
@@ -97,9 +99,11 @@
             </Options>
           </Linking>
           <Other>
-            <CustomOptions Value="-dUseCThreads"/>
-            <OtherDefines Count="1">
+            <CustomOptions Value="-dUseCThreads
+-dINCLUDE_MQTT_OPTIONS"/>
+            <OtherDefines Count="2">
               <Define0 Value="UseCThreads"/>
+              <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
             </OtherDefines>
           </Other>
         </CompilerOptions>
@@ -167,7 +171,12 @@
       </Options>
     </Linking>
     <Other>
-      <CustomOptions Value="-dUseCThreads"/>
+      <CustomOptions Value="-dUseCThreads
+-dINCLUDE_MQTT_OPTIONS"/>
+      <OtherDefines Count="2">
+        <Define0 Value="UseCThreads"/>
+        <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
+      </OtherDefines>
     </Other>
   </CompilerOptions>
   <Debugging>

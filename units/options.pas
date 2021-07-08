@@ -2,8 +2,9 @@ unit options;
 
 {$mode objfpc}{$H+}
 
-{$DEFINE INCLUDE_MQTT_OPTIONS}
-{ -- $DEFINE INCLUDE_HTTP_OPTIONS}
+// set these defines in the project options
+{-- $DEFINE INCLUDE_MQTT_OPTIONS}
+{-- $DEFINE INCLUDE_HTTP_OPTIONS}
 
 interface
 
@@ -44,9 +45,37 @@ type
   
   { TParams }
 
+  {$IFDEF INCLUDE_HTTP_OPTIONS}
+  TIpListAction = (ilaNothing, ilaSave, ilaErase);
+  {$ENDIF}
+
   TParams = class
   private
     ini: TIniFile;
+
+    {$IFDEF INCLUDE_HTTP_OPTIONS}
+    FIncludeIPs: TStrings;
+    FExcludeIPs: TStrings;
+    FExcludeIPsAction: TIpListAction;
+    FIncludeIPsAction: TIPListAction;
+
+    function GetSubnet: string;
+    function GetSubnetBits: integer;
+    function GetScanAllIP: boolean;
+    function GetFirstIP: string;
+    function GetLastIP: string;
+    function GetScanAttempts: integer;
+    function GetScanTimeout: integer;
+    procedure SetExcludeIPs(AValue: TStrings);
+    procedure SetIncludeIPs(AValue: TStrings);
+    procedure SetSubnet(AValue: string);
+    procedure SetSubnetBits(AValue: integer);
+    procedure SetScanAllIP(AValue: boolean);
+    procedure SetFirstIP(AValue: string);
+    procedure SetLastIP(AValue: string);
+    procedure SetScanAttempts(AValue: integer);
+    procedure SetScanTimeout(AValue: integer);
+    {$ENDIF}
 
     {$IFDEF INCLUDE_MQTT_OPTIONS}
     function GetHost: string;
@@ -61,23 +90,6 @@ type
     procedure SetPassword(AValue: string);
     procedure SetTopic(AValue: string);
     procedure SetMqttTimeout(AValue: integer);
-    {$ENDIF}
-
-    {$IFDEF INCLUDE_HTTP_OPTIONS}
-    function GetSubnet: string;
-    function GetSubnetBits: integer;
-    function GetScanAllIP: boolean;
-    function GetFirstIP: string;
-    function GetLastIP: string;
-    function GetScanAttempts: integer;
-    function GetScanTimeout: integer;
-    procedure SetSubnet(AValue: string);
-    procedure SetSubnetBits(AValue: integer);
-    procedure SetScanAllIP(AValue: boolean);
-    procedure SetFirstIP(AValue: string);
-    procedure SetLastIP(AValue: string);
-    procedure SetScanAttempts(AValue: integer);
-    procedure SetScanTimeout(AValue: integer);
     {$ENDIF}
 
     function GetDownloadAttempts: integer;
@@ -116,6 +128,10 @@ type
     property LastIP: string read GetLastIP write SetLastIP;
     property ScanAttempts: integer read GetScanAttempts write SetScanAttempts;
     property ScanTimeout: integer read GetScanTimeout write SetScanTimeout;
+    property ExcludeIPs: TStrings read FExcludeIPs write SetExcludeIPs;
+    property ExcludeIPsAction: TIpListAction read FExcludeIPsAction write FExcludeIPsAction;
+    property IncludeIPs: TStrings read FIncludeIPs write SetIncludeIPs;
+    property IncludeIPsAction: TIpListAction read FIncludeIPsAction write FIncludeIPsAction;
     {$ENDIF}
 
     property Directory: string read GetDirectory write SetDirectory;
@@ -151,6 +167,9 @@ const
   {$ENDIF}
 
   {$IFDEF INCLUDE_HTTP_OPTIONS}
+  Sexclude = 'Exclude';
+  Sinclude = 'Include';
+
   Ssubnet = 'Subnet';
   SsubnetBits = 'SubnetBits';
   SscanAllIp = 'ScanAllIP';
@@ -289,6 +308,16 @@ begin
   result := ini.ReadInteger(Soptions, SscanTimeout, DEFAULT_SCAN_TIMEOUT);
 end;
 
+procedure TParams.SetExcludeIPs(AValue: TStrings);
+begin
+  FExcludeIPs.assign(AValue);
+end;
+
+procedure TParams.SetIncludeIPs(AValue: TStrings);
+begin
+  FIncludeIPs.assign(AValue);
+end;
+
 procedure TParams.SetSubnet(AValue: string);
 begin
   ini.WriteString(Soptions, Ssubnet, AValue);
@@ -396,14 +425,49 @@ begin
   ini.writeInteger(Soptions, SfilenameFormat, AValue);
 end;
 
+
 constructor TParams.create;
+{$IFDEF INCLUDE_HTTP_OPTIONS}
+var
+  i: integer;
+{$ENDIF}
 begin
   inherited create;
   ini := TIniFile.create(configfile, []);
+  {$IFDEF INCLUDE_HTTP_OPTIONS}
+  FIncludeIPs := TStringList.create;
+  FExcludeIPs := TStringList.create;
+  ini.ReadSectionValues(Sexclude, FExcludeIPs);
+  ini.ReadSectionValues(Sinclude, FIncludeIPs);
+  for i := 0 to FExcludeIPs.count-1 do
+    FExcludeIPs[i] := FExcludeIPs.ValueFromIndex[i];
+  for i := 0 to FIncludeIPs.count-1 do
+    FIncludeIPs[i] := FIncludeIPs.ValueFromIndex[i];
+  {$ENDIF}
 end;
 
 destructor TParams.destroy;
+{$IFDEF INCLUDE_HTTP_OPTIONS}
+var
+  i: integer;
+{$ENDIF}
 begin
+  {$IFDEF INCLUDE_HTTP_OPTIONS}
+  if ExcludeIPsAction <> ilaNothing then begin
+    ini.EraseSection(Sexclude);
+    if ExcludeIPsAction = ilaSave then begin
+      for i := 0 to FExcludeIPs.count-1 do
+         ini.writeString(Sexclude, Format('%0.3d', [i]), FExcludeIPs[i]);
+    end;
+  end;
+  if IncludeIPsAction <> ilaNothing then begin
+    ini.EraseSection(Sinclude);
+    if IncludeIPsAction = ilaSave then begin
+      for i := 0 to FIncludeIPs.count-1 do
+         ini.writeString(sinclude, Format('%0.3d', [i]), FIncludeIPs[i]);
+    end;
+  end;
+  {$ENDIF}
   ini.free;
   inherited destroy;
 end;
