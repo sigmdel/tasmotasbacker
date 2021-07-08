@@ -1,6 +1,6 @@
 # tasmotasbacker : Tamotas Backer
 
-**Version 0.3.5** (July 5, 2021)
+**Version 0.3.6** (July 7, 2021)
 
 A utility that can back up the configuration of all Tasmota devices that share a common MQTT topic. It uses the [Eclipse mosquitto](https://mosquitto.org/) library to communicate with the MQTT broker to obtain a list of IP addresses of Tasmota devices connected to the broker.
 
