@@ -204,10 +204,10 @@ begin
   if not logopened then begin
      {$IFDEF MSWINDOWS}
      close(StdOut);
-     assign(StdOut,  'tasmotasbacker.log');
+     assign(StdOut,  changefileext(application.ExeName, '.log'));
      rewrite(StdOut);
      {$ENDIF}
-     writeln(StdOut, 'time':19, 'diff':8,'   ', 'message');
+     writeln(StdOut, 'time':18, 'diff':8,'   ', 'message');
      logopened := true;
   end;
   for i := 1 to length(msg) do
@@ -251,7 +251,7 @@ var
 begin
   {$IFDEF DEBUG_HTTP_REQUEST}
   lastic := GetTickCount64;
-  log(Format('HttpRequest(url: %s, maxtries: %d, backoff: %d', [aURL, maxtries, backoff]));
+  log(Format('HttpRequest(url: %s, maxtries: %d, timeout: %d)', [aURL, maxtries, backoff]));
   {$ENDIF}
   rawdata := '';
   code := -1;
