@@ -173,10 +173,6 @@
     <Other>
       <CustomOptions Value="-dUseCThreads
 -dINCLUDE_MQTT_OPTIONS"/>
-      <OtherDefines Count="2">
-        <Define0 Value="UseCThreads"/>
-        <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
-      </OtherDefines>
     </Other>
   </CompilerOptions>
   <Debugging>

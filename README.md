@@ -1,4 +1,4 @@
-# tasmotasbacker : Tamotas Backer
+# tasmotasbacker : Tasmotas Backer
 
 **Version 0.3.6** (July 7, 2021)
 
@@ -6,9 +6,6 @@ A utility that can back up the configuration of all Tasmota devices that share a
 
 ![screenshot](images/backups_capture.jpg)
 
-
-
-<!-- The screen capture shows the message sent to the public `test.moquitto.org` broker and it's reply. In this example, the client is subscribed to the same topic used to send the message, which in many cases would not be done. -->
 
 <!-- TOC -->
 
@@ -23,8 +20,9 @@ A utility that can back up the configuration of all Tasmota devices that share a
 - [7. WARNINGS](#7-warnings)
     - [7.1. Beta Version](#71-beta-version)
     - [7.2. Security](#72-security)
-- [8. Acknowledgment](#8-acknowledgment)
-- [9. Licence](#9-licence)
+- [8. Similar Projects](#8-similar-projects)
+- [9. Acknowledgment](#9-acknowledgment)
+- [10. Licence](#10-licence)
 
 <!-- /TOC -->
 
@@ -124,13 +122,19 @@ Information on how to use the program can be found on this site: [DIY Tasmota Ba
 
 ## 7. WARNINGS
 
-### 7.1. Beta Version
+### 7.1. Timing
 
-This is a beta version. While it does work, there are rough edges.
+If an incorrect IP address is given for the MQTT broker the program appears to hang when an MQTT message is sent to find the Tasmota devices. To avoid this problem an attempt to establish a TCP connection with given host and port is made. The MQTT broker will be used only if that connection can be made. The initial page of utility has a `Timeout` field which specifies the maximum time to wait for a reply during that intitial TCP connection. The timeout is specified in seconds, its minimum value is 1 second.
 
-Because there can be timeouts when obtaining the configuration of multiple Tasmota devices, two options have been added: a timeout option and a retry option. The default timeout, 4 seconds (4000 ms), usually works very well on a system with a 4th generation i7 CPU running Linux Mint 20.1. However the timeout had to be increased to 5 or even 6 seconds (5000-6000 ms) on a system with a 4th generation i5 running Windows 11 connected to the same local area network.
+Because the HTTP requests sent by the utility are blocking, timeouts have to be specified otherwise the program would hang. There are two options that can be tweaked:
 
-If you compile the program, then there are a couple of directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. This can be useful when trying to set default timeout and retries values. If using a binary release, then adjust the `Connect attempts` and `Connect timeout` fields in the `Backup parameters` sheet. 
+3. `Download attempts` - the maximum number of times an HTTP request for the Tasmota configuration is made.
+
+4. `Download timeout` -  the maximum time to wait for a reply. Specified in seconds, the minimum is 1 second.
+
+The default values usually work well on a system with a 4th generation i7 CPU running Linux Mint 20.1. However the timeout had to be increased to 5 or even 6 seconds (5000-6000 ms) on a system with a 4th generation i5 running Windows 10 connected to the same local area network. 
+
+Mileage will vary as the per the old chestnut. To help in fixing reasonable values, there are two directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. Those using a binary release, can only adjust the values in the application and save them in the `Backup parameters` sheet. 
 
 ### 7.2. Security
 
@@ -140,7 +144,27 @@ A quick fix was added in version 0.3.3 to encrypt the password. A default encryp
 
 Note that the MQTT user and password are transmitted in plain text over an HTTP connection, so truly secure handling of the MQTT password will have to wait until communication with the broker using the HTTPS protocol is implemented.
 
-## 8. Acknowledgment
+
+## 8. Similar Projects
+
+A version of this project that does not use an MQTT broker to find Tasmota devices is available.
+
+- [tasmotasbacker0](https://github.com/sigmdel/tasmotasbacker0) by sigmdel.
+
+It does not require the `mosquitto` library and only uses HTTP requests to find Tasmota devices and download their configuration. The scan to find devices can be considerable longer than using an MQTT broker. On the other hand it may find Tasmota devices that are not configured to use an MQTT broker or that have a broken MQTT configuration.
+
+There are two Python scripts on GitHub that do essentially the same thing:
+
+- [tas-backup](https://github.com/dragonflyuk) by dragonflyuk,
+- [Tasmota-Config-Backup](https://github.com/rt400/Tasmota-Config-Backup/blob/master/tasmota_backup.py) by Yuval (rt400).
+
+There is also a much more ambitious PHP project:
+
+- [TasmoBackupV1](https://github.com/danmed/TasmoBackupV1) by danmed.
+
+A thorough search would probably turn up many more references.
+
+## 9. Acknowledgment
 
 Obviously, this utility would not have been possible without 
 
@@ -150,7 +174,7 @@ Obviously, this utility would not have been possible without
 
 Useful information was obtained from others. Where possible, acknowledgment and references are provided in the source code.
 
-## 9. Licence
+## 10. Licence
 
 The [Eclipse Mosquitto](https://github.com/eclipse/mosquitto) project is dual-licensed under the Eclipse Public License 2.0 and the
 Eclipse Distribution License 1.0.
