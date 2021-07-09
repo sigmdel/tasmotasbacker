@@ -84,9 +84,11 @@ The repository is self-contained (except for the mosquitto library of course), s
 
 When compiling a final version, it would be advisable to heed the following advice.
 
+1. Ensure that the directives `UseCThreads` and `INCLUDE_MQTT_OPTIONS` are both added in the `Personalised Options` in `Project Options /Compiler Options`.
+
 1.  Modify the default password encryption key `DEFAULT_KEY` in the `units/pwd.pas` file. That way it will not be easy for any one of the numerous users of this application to gain access to a system to read the configuration file and then obtain the MQTT broker password. See [7.2. Security](#72-security) for more details.
 
-2.  Add an application icon. Select `Load Icon` in `Project / Project Options` in the Lazarus IDE. The `tasmotabacker.png` image in the `images` directory can be used .
+2.  The application icon should be defined, but if it is not then select `Load Icon` in `Project / Project / Project Options` in the Lazarus IDE. The `tasmotabacker.png` image in the `images` directory can be used.
 
 3.  Compile the release version. Select the `Release` build mode in `Project / Project Options / Compiler Options` in the Lazarus IDE. This will reduce the size of the executable by an order of magnitude.
 
@@ -98,9 +100,9 @@ There is a [proof of concept project](poc) in the repository that verifies that 
 
 ## 4. Installation and Releases
 
-The current release contains a compressed Linux binary, `tasmotasbacker.gz` that runs on Mint 20.1. Extract the binary `tasmotasbacker` to a directory in the search path such as `~./local/bin/tasmotasbacker/`.  Copy the image `iamges/tasmotabacker.png` into the same directory. The `installation` directory contains a `tamostasbacker.desktop` file along with rudimentary instructions on how to install the utility in a Mint 20.1 Mate system. Presumably, installation in other Linux distributions would be more or less the same.
+The file `tasmotasbacker-r****.gz`, contains a compressed `x86_64-linux` binary which was tested on Mint 20.1 . Extract the binary `tasmotasbacker` to a directory in the search path such as `~./local/bin/`.  Copy the image `images/tasmotabacker.png` into the same directory. The `installation` directory contains a `tamostasbacker.desktop` file along with rudimentary instructions on how to install the utility in a Mint 20.1 Mate system. Presumably, installation in other Linux distributions would be more or less the same.
 
-Details about installation of an application in Windows are unfortunately not provided. A binary is provided in the `tasmotasbacker.zip` archive.
+Details about installation of an application in Windows are unfortunately not provided. A `x86_64-win64` binary is provided in the `tasmotasbacker0-r****.zip` archive.
 
 
 ## 5. Program Options
@@ -126,7 +128,7 @@ Information on how to use the program can be found on this site: [DIY Tasmota Ba
 
 If an incorrect IP address is given for the MQTT broker the program appears to hang when an MQTT message is sent to find the Tasmota devices. To avoid this problem an attempt to establish a TCP connection with given host and port is made. The MQTT broker will be used only if that connection can be made. The initial page of utility has a `Timeout` field which specifies the maximum time to wait for a reply during that intitial TCP connection. The timeout is specified in seconds, its minimum value is 1 second.
 
-Because the HTTP requests sent by the utility are blocking, timeouts have to be specified otherwise the program would hang. There are two options that can be tweaked:
+Because the HTTP requests sent by the utility are blocking, timeouts have to be specified otherwise the program could hang. There are two options that can be tweaked:
 
 3. `Download attempts` - the maximum number of times an HTTP request for the Tasmota configuration is made.
 
@@ -135,6 +137,34 @@ Because the HTTP requests sent by the utility are blocking, timeouts have to be 
 The default values usually work well on a system with a 4th generation i7 CPU running Linux Mint 20.1. However the timeout had to be increased to 5 or even 6 seconds (5000-6000 ms) on a system with a 4th generation i5 running Windows 10 connected to the same local area network. 
 
 Mileage will vary as the per the old chestnut. To help in fixing reasonable values, there are two directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. Those using a binary release, can only adjust the values in the application and save them in the `Backup parameters` sheet. 
+
+Mileage will vary as the per the old chestnut. To help find reasonable values, there are four directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST`, `DEBUG_BACKUP`) that can be defined to log some timing information. To see the time log in Linux, start the application from a terminal. In Windows, the log is saved to a file named `tasmotasbacker.log` in the same directory as the executable when the latter is exited. Here is part of the timing log when `DEBUG_HTTP_REQUEST` is defined.
+
+```
+              time    diff   message
+11:56:34.132856187       0   HttpRequest(url: http://192.168.1.100/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
+11:56:34.132856218      31     request returns after 1 tries with code = 200, data = <!DOCTYPE html>?<html>?<head>? <meta http-equiv="Content-Type" c
+11:56:34.132856234       0   HttpRequest(url: http://192.168.1.101/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
+11:56:34.132856500     266     Exception class EHTTPClient, message Unexpected response status code: 404, code 404, try 1
+11:56:34.132856500       0     request returns after 1 tries with code = 404, data = 
+11:56:34.132856515       0   HttpRequest(url: http://192.168.1.102/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
+11:56:35.132856765     250     request returns after 1 tries with code = 200, data = {"Hostname":"entree"}
+11:56:35.132856765       0   HttpRequest(url: http://192.168.1.102/cm?cmnd=topic, maxtries: 2, timeout: 4000)
+11:56:35.132856890     125     request returns after 1 tries with code = 200, data = {"Topic":"entree"}
+11:56:35.132856921       0   HttpRequest(url: http://192.168.1.103/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
+11:56:35.132857375     454     request returns after 1 tries with code = 200, data = {"Hostname":"lampe-biblio"}
+11:56:35.132857375       0   HttpRequest(url: http://192.168.0.103/cm?cmnd=topic, maxtries: 2, timeout: 4000)
+11:56:35.132857500     125     request returns after 1 tries with code = 200, data = {"Topic":"lampe-biblio"}
+...
+11:56:35.132857531       0   HttpRequest(url: http://192.168.1.155/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
+11:56:39.132861546    4015     Exception class ESocketError, message Connection to 192.168.1.155:80 timed out., code 5, try 1
+11:56:39.132861546       0     http request attemp 1 failed with code: 5
+11:56:47.132869578    8032     Exception class ESocketError, message Connection to 192.168.1.155:80 timed out., code 5, try 2
+11:56:47.132869578       0     http request attemp 2 failed with code: 5
+...
+```
+The fractional part of the seconds entry in the time stamp is the system tick count. The diff column shows the number of tick counts between two entries in the log which is nominally the number of elapsed milliseconds between them. Since this tick counter is reset to 0 for each new HTTP request it is easy to see the time taken by the device to reply.  
+
 
 ### 7.2. Security
 
@@ -158,7 +188,7 @@ There are two Python scripts on GitHub that do essentially the same thing:
 - [tas-backup](https://github.com/dragonflyuk) by dragonflyuk,
 - [Tasmota-Config-Backup](https://github.com/rt400/Tasmota-Config-Backup/blob/master/tasmota_backup.py) by Yuval (rt400).
 
-There is also a much more ambitious PHP project:
+There is also a much more ambitious PHP/Sqlite project:
 
 - [TasmoBackupV1](https://github.com/danmed/TasmoBackupV1) by danmed.
 
