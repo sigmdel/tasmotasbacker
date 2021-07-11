@@ -18,7 +18,7 @@ A utility that can back up the configuration of all Tasmota devices that share a
 - [5. Program Options](#5-program-options)
 - [6. Usage](#6-usage)
 - [7. WARNINGS](#7-warnings)
-    - [7.1. Beta Version](#71-beta-version)
+    - [7.1. Timing](#71-timing)
     - [7.2. Security](#72-security)
 - [8. Similar Projects](#8-similar-projects)
 - [9. Acknowledgment](#9-acknowledgment)
@@ -134,11 +134,9 @@ Because the HTTP requests sent by the utility are blocking, timeouts have to be 
 
 4. `Download timeout` -  the maximum time to wait for a reply. Specified in seconds, the minimum is 1 second.
 
-The default values usually work well on a system with a 4th generation i7 CPU running Linux Mint 20.1. However the timeout had to be increased to 5 or even 6 seconds (5000-6000 ms) on a system with a 4th generation i5 running Windows 10 connected to the same local area network. 
+The default values usually work well on a system with a 4th generation i7 CPU running Linux Mint 20.1. However the timeout had to be increased to 5 or even 6 seconds on a system with a 4th generation i5 running Windows 10 connected to the same local area network. 
 
-Mileage will vary as the per the old chestnut. To help in fixing reasonable values, there are two directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. Those using a binary release, can only adjust the values in the application and save them in the `Backup parameters` sheet. 
-
-Mileage will vary as the per the old chestnut. To help find reasonable values, there are four directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST`, `DEBUG_BACKUP`) that can be defined to log some timing information. To see the time log in Linux, start the application from a terminal. In Windows, the log is saved to a file named `tasmotasbacker.log` in the same directory as the executable when the latter is exited. Here is part of the timing log when `DEBUG_HTTP_REQUEST` is defined.
+Mileage will vary as per the old chestnut. To help in fixing reasonable values, there are two directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. To see the time log in Linux, start the application from a terminal. In Windows, the log is saved to a file named `tasmotasbacker.log` in the same directory as the executable when the latter is exited. Here is part of the timing log when `DEBUG_HTTP_REQUEST` is defined.
 
 ```
               time    diff   message
@@ -163,8 +161,7 @@ Mileage will vary as the per the old chestnut. To help find reasonable values, t
 11:56:47.132869578       0     http request attemp 2 failed with code: 5
 ...
 ```
-The fractional part of the seconds entry in the time stamp is the system tick count. The diff column shows the number of tick counts between two entries in the log which is nominally the number of elapsed milliseconds between them. Since this tick counter is reset to 0 for each new HTTP request it is easy to see the time taken by the device to reply.  
-
+The fractional part of the seconds entry in the time stamp is the system tick count. The diff column shows the number of tick counts between two entries in the log which is nominally the number of elapsed milliseconds between them. Since this tick counter is reset to 0 for each new HTTP request it is easy to see the delay before the replay is received from the peripheral.  
 
 ### 7.2. Security
 
