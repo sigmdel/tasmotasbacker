@@ -79,7 +79,7 @@ type
     DateEdit: TDateEdit;
     DirectoryEdit: TDirectoryEdit;
     Label14: TLabel;
-    Page5: TPage;
+    OptionsPage: TPage;
     OptionsGrid: TStringGrid;
     DownloadAttemptsEdit: TSpinEdit;
     DownloadTimeoutEdit: TSpinEdit;
@@ -89,7 +89,7 @@ type
     Label11: TLabel;
     Label12: TLabel;
     Label13: TLabel;
-    Page4: TPage;
+    BackupResultsPage: TPage;
     ResGrid: TStringGrid;
     UserEdit: TEdit;
     ExtensionEdit: TEdit;
@@ -104,9 +104,9 @@ type
     Label8: TLabel;
     Label9: TLabel;
     Notebook1: TNotebook;
-    Page1: TPage;
-    Page2: TPage;
-    Page3: TPage;
+    PageMqttBroker: TPage;
+    FoundDevicesPage: TPage;
+    BackupParamsPage: TPage;
     RadioButton1: TRadioButton;
     RadioButton2: TRadioButton;
     PortEdit: TSpinEdit;
@@ -135,11 +135,11 @@ type
     procedure ExtensionEditChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure GridClick(Sender: TObject);
-    procedure Page2BeforeShow(ASender: TObject; ANewPage: TPage;
+    procedure FoundDevicesPageBeforeShow(ASender: TObject; ANewPage: TPage;
       ANewIndex: Integer);
-    procedure Page4BeforeShow(ASender: TObject; ANewPage: TPage;
+    procedure BackupResultsPageBeforeShow(ASender: TObject; ANewPage: TPage;
       ANewIndex: Integer);
-    procedure Page5BeforeShow(ASender: TObject; ANewPage: TPage;
+    procedure OptionsPageBeforeShow(ASender: TObject; ANewPage: TPage;
       ANewIndex: Integer);
     procedure QuitButtonClick(Sender: TObject);
     procedure GridHeaderSized(Sender: TObject; IsColumn: Boolean;
@@ -896,19 +896,19 @@ begin
   AllOptionsCheckBox.SetFocus;
 end;
 
-procedure TMainForm.Page2BeforeShow(ASender: TObject; ANewPage: TPage;
+procedure TMainForm.FoundDevicesPageBeforeShow(ASender: TObject; ANewPage: TPage;
   ANewIndex: Integer);
 begin
   updategrid := DeviceGrid;
 end;
 
-procedure TMainForm.Page4BeforeShow(ASender: TObject; ANewPage: TPage;
+procedure TMainForm.BackupResultsPageBeforeShow(ASender: TObject; ANewPage: TPage;
   ANewIndex: Integer);
 begin
   updategrid := ResGrid;
 end;
 
-procedure TMainForm.Page5BeforeShow(ASender: TObject; ANewPage: TPage;
+procedure TMainForm.OptionsPageBeforeShow(ASender: TObject; ANewPage: TPage;
   ANewIndex: Integer);
 begin
   updategrid := OptionsGrid;

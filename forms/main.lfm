@@ -10,20 +10,19 @@ object MainForm: TMainForm
   OnDestroy = FormDestroy
   ParentBiDiMode = False
   Position = poScreenCenter
-  LCLVersion = '2.0.12.0'
   object Notebook1: TNotebook
     Left = 0
     Height = 298
     Top = 0
     Width = 421
-    PageIndex = 0
+    PageIndex = 4
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
-    object Page1: TPage
+    object PageMqttBroker: TPage
       object Label1: TLabel
-        AnchorSideLeft.Control = Page1
-        AnchorSideTop.Control = Page1
+        AnchorSideLeft.Control = PageMqttBroker
+        AnchorSideTop.Control = PageMqttBroker
         Left = 12
         Height = 14
         Top = 6
@@ -36,7 +35,7 @@ object MainForm: TMainForm
         ParentFont = False
       end
       object Label2: TLabel
-        AnchorSideLeft.Control = Page1
+        AnchorSideLeft.Control = PageMqttBroker
         AnchorSideTop.Control = HostEdit
         AnchorSideTop.Side = asrCenter
         Left = 6
@@ -85,9 +84,9 @@ object MainForm: TMainForm
         ParentColor = False
       end
       object Next1Button: TButton
-        AnchorSideRight.Control = Page1
+        AnchorSideRight.Control = PageMqttBroker
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = Page1
+        AnchorSideBottom.Control = PageMqttBroker
         AnchorSideBottom.Side = asrBottom
         Left = 340
         Height = 25
@@ -116,7 +115,7 @@ object MainForm: TMainForm
         AnchorSideLeft.Control = PasswordEdit
         AnchorSideTop.Control = PortEdit
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = Page1
+        AnchorSideRight.Control = PageMqttBroker
         AnchorSideRight.Side = asrBottom
         Left = 77
         Height = 27
@@ -215,11 +214,11 @@ object MainForm: TMainForm
         Value = 1
       end
     end
-    object Page2: TPage
-      OnBeforeShow = Page2BeforeShow
+    object FoundDevicesPage: TPage
+      OnBeforeShow = FoundDevicesPageBeforeShow
       object Label6: TLabel
-        AnchorSideLeft.Control = Page2
-        AnchorSideTop.Control = Page2
+        AnchorSideLeft.Control = FoundDevicesPage
+        AnchorSideTop.Control = FoundDevicesPage
         Left = 12
         Height = 14
         Top = 6
@@ -232,9 +231,9 @@ object MainForm: TMainForm
         ParentFont = False
       end
       object Next2Button: TButton
-        AnchorSideRight.Control = Page2
+        AnchorSideRight.Control = FoundDevicesPage
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = Page2
+        AnchorSideBottom.Control = FoundDevicesPage
         AnchorSideBottom.Side = asrBottom
         Left = 340
         Height = 25
@@ -248,7 +247,7 @@ object MainForm: TMainForm
         TabOrder = 2
       end
       object CheckBox1: TCheckBox
-        AnchorSideLeft.Control = Page2
+        AnchorSideLeft.Control = FoundDevicesPage
         AnchorSideTop.Control = Label6
         AnchorSideTop.Side = asrBottom
         Left = 6
@@ -264,7 +263,7 @@ object MainForm: TMainForm
         TabOrder = 0
       end
       object Label11: TLabel
-        AnchorSideLeft.Control = Page2
+        AnchorSideLeft.Control = FoundDevicesPage
         AnchorSideLeft.Side = asrCenter
         AnchorSideTop.Control = CheckBox1
         Left = 186
@@ -277,10 +276,10 @@ object MainForm: TMainForm
         ParentColor = False
       end
       object DeviceGrid: TStringGrid
-        AnchorSideLeft.Control = Page2
+        AnchorSideLeft.Control = FoundDevicesPage
         AnchorSideTop.Control = CheckBox1
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = Page2
+        AnchorSideRight.Control = FoundDevicesPage
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = Next2Button
         Left = 6
@@ -335,12 +334,12 @@ object MainForm: TMainForm
         TabOrder = 3
       end
     end
-    object Page3: TPage
+    object BackupParamsPage: TPage
       object DirectoryEdit: TDirectoryEdit
-        AnchorSideLeft.Control = Page3
+        AnchorSideLeft.Control = BackupParamsPage
         AnchorSideTop.Control = Label7
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = Page3
+        AnchorSideRight.Control = BackupParamsPage
         AnchorSideRight.Side = asrBottom
         Left = 6
         Height = 27
@@ -359,8 +358,8 @@ object MainForm: TMainForm
         Text = 'backups'
       end
       object Label7: TLabel
-        AnchorSideLeft.Control = Page3
-        AnchorSideTop.Control = Page3
+        AnchorSideLeft.Control = BackupParamsPage
+        AnchorSideTop.Control = BackupParamsPage
         Left = 12
         Height = 14
         Top = 6
@@ -467,9 +466,9 @@ object MainForm: TMainForm
         TabOrder = 5
       end
       object BackupButton: TButton
-        AnchorSideRight.Control = Page3
+        AnchorSideRight.Control = BackupParamsPage
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = Page3
+        AnchorSideBottom.Control = BackupParamsPage
         AnchorSideBottom.Side = asrBottom
         Left = 340
         Height = 25
@@ -499,7 +498,7 @@ object MainForm: TMainForm
       object DateFormatEdit: TComboBox
         AnchorSideTop.Control = DateEdit
         AnchorSideTop.Side = asrCenter
-        AnchorSideRight.Control = Page3
+        AnchorSideRight.Control = BackupParamsPage
         AnchorSideRight.Side = asrBottom
         Left = 325
         Height = 26
@@ -570,7 +569,7 @@ object MainForm: TMainForm
       object Label16: TLabel
         AnchorSideTop.Control = DownloadAttemptsEdit
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = Page3
+        AnchorSideRight.Control = BackupParamsPage
         AnchorSideRight.Side = asrBottom
         Left = 302
         Height = 14
@@ -601,7 +600,7 @@ object MainForm: TMainForm
       object Label17: TLabel
         AnchorSideTop.Control = RadioButton1
         AnchorSideTop.Side = asrCenter
-        AnchorSideRight.Control = Page3
+        AnchorSideRight.Control = BackupParamsPage
         AnchorSideRight.Side = asrBottom
         Left = 295
         Height = 14
@@ -627,12 +626,12 @@ object MainForm: TMainForm
         Value = 2
       end
     end
-    object Page4: TPage
-      OnBeforeShow = Page4BeforeShow
+    object BackupResultsPage: TPage
+      OnBeforeShow = BackupResultsPageBeforeShow
       object OptionsButton: TButton
-        AnchorSideRight.Control = Page4
+        AnchorSideRight.Control = BackupResultsPage
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = Page4
+        AnchorSideBottom.Control = BackupResultsPage
         AnchorSideBottom.Side = asrBottom
         Left = 340
         Height = 25
@@ -646,8 +645,8 @@ object MainForm: TMainForm
         TabOrder = 1
       end
       object Label12: TLabel
-        AnchorSideLeft.Control = Page4
-        AnchorSideTop.Control = Page4
+        AnchorSideLeft.Control = BackupResultsPage
+        AnchorSideTop.Control = BackupResultsPage
         Left = 12
         Height = 14
         Top = 6
@@ -660,10 +659,10 @@ object MainForm: TMainForm
         ParentFont = False
       end
       object ResGrid: TStringGrid
-        AnchorSideLeft.Control = Page4
+        AnchorSideLeft.Control = BackupResultsPage
         AnchorSideTop.Control = Label18
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = Page4
+        AnchorSideRight.Control = BackupResultsPage
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = OptionsButton
         Left = 6
@@ -711,7 +710,7 @@ object MainForm: TMainForm
         )
       end
       object Label18: TLabel
-        AnchorSideLeft.Control = Page4
+        AnchorSideLeft.Control = BackupResultsPage
         AnchorSideTop.Control = Label12
         AnchorSideTop.Side = asrBottom
         Left = 6
@@ -736,12 +735,12 @@ object MainForm: TMainForm
         ParentColor = False
       end
     end
-    object Page5: TPage
-      OnBeforeShow = Page5BeforeShow
+    object OptionsPage: TPage
+      OnBeforeShow = OptionsPageBeforeShow
       object SaveButton: TButton
-        AnchorSideRight.Control = Page5
+        AnchorSideRight.Control = OptionsPage
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = Page5
+        AnchorSideBottom.Control = OptionsPage
         AnchorSideBottom.Side = asrBottom
         Left = 305
         Height = 30
@@ -755,8 +754,8 @@ object MainForm: TMainForm
         TabOrder = 2
       end
       object Label14: TLabel
-        AnchorSideLeft.Control = Page5
-        AnchorSideTop.Control = Page5
+        AnchorSideLeft.Control = OptionsPage
+        AnchorSideTop.Control = OptionsPage
         Left = 12
         Height = 14
         Top = 6
@@ -769,10 +768,10 @@ object MainForm: TMainForm
         ParentFont = False
       end
       object OptionsGrid: TStringGrid
-        AnchorSideLeft.Control = Page5
+        AnchorSideLeft.Control = OptionsPage
         AnchorSideTop.Control = AllOptionsCheckBox
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = Page5
+        AnchorSideRight.Control = OptionsPage
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = SaveButton
         Left = 6
@@ -809,7 +808,7 @@ object MainForm: TMainForm
         OnSelectCell = DeviceGridSelectCell
       end
       object AllOptionsCheckBox: TCheckBox
-        AnchorSideLeft.Control = Page5
+        AnchorSideLeft.Control = OptionsPage
         AnchorSideTop.Control = Label14
         AnchorSideTop.Side = asrBottom
         Left = 6
