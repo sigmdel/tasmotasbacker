@@ -15,4 +15,6 @@ For Pascal examples provided by chainq (`test.pas` and `testclass.pas`) please g
 
 ### Note
 
+The library header file `mosquitto.pas` has been modified to provide for dynamic loading of the library. That was the only way found to allow the program to run on systems without the `mosquitto` library.
+
 Unsusbscribe methods have been added to the `TMQTTConnection` class in `mqttclass.pas` as described by JacoFourie in [Issues #5: No Unsubscribe in the class](https://github.com/chainq/mosquitto-p/issues/5). This extra functionality is not needed for this project.

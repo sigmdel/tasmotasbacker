@@ -16,8 +16,7 @@
     </General>
     <VersionInfo>
       <UseVersionInfo Value="True"/>
-      <MinorVersionNr Value="3"/>
-      <RevisionNr Value="6"/>
+      <MinorVersionNr Value="9"/>
       <StringTable CompanyName="sigmdel.ca" LegalCopyright="0BDS" OriginalFilename="tasmotasbacker" ProductName="Tasmotas Backer"/>
     </VersionInfo>
     <BuildModes Count="3">
@@ -62,10 +61,12 @@
           </Linking>
           <Other>
             <CustomOptions Value="-dUseCThreads
--dINCLUDE_MQTT_OPTIONS"/>
-            <OtherDefines Count="2">
+-dINCLUDE_MQTT_OPTIONS
+-dINCLUDE_HTTP_OPTIONS"/>
+            <OtherDefines Count="3">
               <Define0 Value="UseCThreads"/>
               <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
+              <Define2 Value="INCLUDE_HTTP_OPTIONS"/>
             </OtherDefines>
           </Other>
         </CompilerOptions>
@@ -100,7 +101,8 @@
           </Linking>
           <Other>
             <CustomOptions Value="-dUseCThreads
--dINCLUDE_MQTT_OPTIONS"/>
+-dINCLUDE_MQTT_OPTIONS
+-dINCLUDE_HTTP_OPTIONS"/>
             <OtherDefines Count="2">
               <Define0 Value="UseCThreads"/>
               <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
@@ -123,7 +125,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="6">
+    <Units Count="11">
       <Unit0>
         <Filename Value="tasmotasbacker.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -151,6 +153,30 @@
         <Filename Value="units/pwd.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit5>
+      <Unit6>
+        <Filename Value="forms/ipedit.lfm"/>
+        <IsPartOfProject Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="forms/ipedit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <HasResources Value="True"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="forms/iplistedit.lfm"/>
+        <IsPartOfProject Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="forms/iplistedit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="IpListEditorForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="units/ipv4.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -172,7 +198,8 @@
     </Linking>
     <Other>
       <CustomOptions Value="-dUseCThreads
--dINCLUDE_MQTT_OPTIONS"/>
+-dINCLUDE_MQTT_OPTIONS
+-dINCLUDE_HTTP_OPTIONS"/>
     </Other>
   </CompilerOptions>
   <Debugging>

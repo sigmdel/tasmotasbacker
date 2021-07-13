@@ -467,6 +467,8 @@ begin
          ini.writeString(sinclude, Format('%0.3d', [i]), FIncludeIPs[i]);
     end;
   end;
+  FIncludeIPs.free;
+  FExcludeIPs.free;
   {$ENDIF}
   ini.free;
   inherited destroy;

@@ -1,0 +1,79 @@
+object IpEditForm: TIpEditForm
+  Left = 409
+  Height = 94
+  Top = 250
+  Width = 312
+  ActiveControl = AddressEdit
+  Caption = 'IP Address Editor'
+  ClientHeight = 94
+  ClientWidth = 312
+  FormStyle = fsStayOnTop
+  KeyPreview = True
+  OnKeyDown = FormKeyDown
+  OnShow = FormShow
+  Position = poMainFormCenter
+  ShowInTaskBar = stNever
+  object Label1: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    Left = 6
+    Height = 14
+    Top = 6
+    Width = 93
+    BorderSpacing.Left = 6
+    BorderSpacing.Top = 6
+    Caption = 'Device address:'
+    ParentColor = False
+  end
+  object AddressEdit: TEdit
+    AnchorSideLeft.Control = Label1
+    AnchorSideTop.Control = Label1
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 6
+    Height = 27
+    Top = 26
+    Width = 300
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Top = 6
+    BorderSpacing.Right = 6
+    TabOrder = 0
+    Text = 'AddressEdit'
+  end
+  object Button1: TButton
+    AnchorSideTop.Control = AddressEdit
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = AddressEdit
+    AnchorSideRight.Side = asrBottom
+    Left = 251
+    Height = 30
+    Top = 59
+    Width = 55
+    Anchors = [akTop, akRight]
+    AutoSize = True
+    BorderSpacing.Top = 6
+    BorderSpacing.Bottom = 6
+    Caption = 'Accept'
+    Default = True
+    OnClick = Button1Click
+    TabOrder = 1
+  end
+  object Button2: TButton
+    AnchorSideLeft.Side = asrCenter
+    AnchorSideTop.Control = AddressEdit
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Button1
+    Left = 191
+    Height = 30
+    Top = 59
+    Width = 54
+    Anchors = [akTop, akRight]
+    AutoSize = True
+    BorderSpacing.Top = 6
+    BorderSpacing.Right = 6
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 2
+  end
+end

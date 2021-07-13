@@ -465,6 +465,7 @@ begin
     FMosquitto.OnUnsubscribe(mid);
 end;
 
+//procedure mqtt_on_connect(mosq: Pmosquitto; obj: pointer; rc: cint); cdecl;
 procedure mqtt_on_connect(mosq: Pmosquitto; obj: pointer; rc: cint); cdecl;
 var
   FMosquitto: TMQTTConnection absolute obj;
@@ -551,7 +552,10 @@ begin
 end;
 
 initialization
-  libinited:=mosquitto_lib_init = MOSQ_ERR_SUCCESS;
+  if mosquitto_lib_loaded then
+    libinited := mosquitto_lib_init() = MOSQ_ERR_SUCCESS
+  else
+    libinited := false;
   logger:=@mqtt_log;
 finalization
   if libinited then
