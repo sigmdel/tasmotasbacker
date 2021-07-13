@@ -1,11 +1,12 @@
 # tasmotasbacker : Tasmotas Backer
 
-**Version 0.3.6** (July 7, 2021)
+**Version 0.9.0** (July 12, 2021)
 
-A utility that can back up the configuration of all Tasmota devices that share a common MQTT topic. It uses the [Eclipse mosquitto](https://mosquitto.org/) library to communicate with the MQTT broker to obtain a list of IP addresses of Tasmota devices connected to the broker.
+A utility that can back up the configuration of all Tasmota devices on a local network. Discovery of Tasmota devices can be done by querying them through an MQTT broker or by performing an HTTP scan of IP addresses on the LAN. 
+
+The [Eclipse mosquitto](https://mosquitto.org/) library is used to exchange messages with the MQTT broker. Should the library not be installed then the utility will run.
 
 ![screenshot](images/backups_capture.jpg)
-
 
 <!-- TOC -->
 
@@ -14,15 +15,14 @@ A utility that can back up the configuration of all Tasmota devices that share a
     - [1.2. Windows 10](#12-windows-10)
 - [2. Compiling](#2-compiling)
 - [3. Testing](#3-testing)
-- [4. Installation and Releases](#4-installation-and-releases)
-- [5. Program Options](#5-program-options)
-- [6. Usage](#6-usage)
-- [7. WARNINGS](#7-warnings)
-    - [7.1. Timing](#71-timing)
-    - [7.2. Security](#72-security)
-- [8. Similar Projects](#8-similar-projects)
-- [9. Acknowledgment](#9-acknowledgment)
-- [10. Licence](#10-licence)
+- [4. Program Options](#4-program-options)
+- [5. Usage](#5-usage)
+- [6. WARNINGS](#6-warnings)
+    - [6.1. Timing](#61-timing)
+    - [6.2. Security](#62-security)
+- [7. Similar Projects](#7-similar-projects)
+- [8. Acknowledgment](#8-acknowledgment)
+- [9. Licence](#9-licence)
 
 <!-- /TOC -->
 
@@ -35,20 +35,16 @@ Two Free Pascal units are required
 
 These files, found in the [mosquitto-p](mosquitto-p/) directory, are copied from the [GitHub repository](https://github.com/chainq/mosquitto-p) with the same name by Károly Balogh (chainq).
 
-In addition the  [Eclipse mosquitto](https://mosquitto.org/) library must be installed on the system.
+In order to discover Tasmota devices by MQTT message to the Tasmota group topic, the  [Eclipse mosquitto](https://mosquitto.org/) library must be installed on the system. The program will work if the library is not installed, but of course, an HTTP scan will have to be used to identify Tasmota devices on the network. 
 
 
 ### 1.1. Linux
 
-The libmosquito library is needed. In Debian systems this means installing two packages:
--  `libmosquitto1`
--  `libmosquitto-dev`
-
-The first, `libmosquitto1` will probably already be installed if the mosquitto-clients package is available on the system. In Debian-based systems these packages can be installed with a package manager such as [Synaptic](http://www.nongnu.org/synaptic/) or from the command line.
+In Debian-based systems, the libmosquitto  packages can be installed with a package manager such as [Synaptic](http://www.nongnu.org/synaptic/) or from the command line.
 
     $ sudo apt install libmosquitto1 libmosquitto-dev
 
-There is no requirement to install the mosquitto MQTT broker.
+Note that the first package, `libmosquitto1`, will probably already be installed if the mosquitto-clients package is available on the system. There is no requirement to install the mosquitto MQTT broker.
 
 ### 1.2. Windows 10
 
@@ -84,7 +80,7 @@ The repository is self-contained (except for the mosquitto library of course), s
 
 When compiling a final version, it would be advisable to heed the following advice.
 
-1. Ensure that the directives `UseCThreads` and `INCLUDE_MQTT_OPTIONS` are both added in the `Personalised Options` in `Project Options /Compiler Options`.
+1. Ensure that the directives `UseCThreads`, `INCLUDE_MQTT_OPTIONS` and `INCLUDE_HTTP_OPTIONS` are added in the `Personalised Options` in `Project Options /Compiler Options`.
 
 1.  Modify the default password encryption key `DEFAULT_KEY` in the `units/pwd.pas` file. That way it will not be easy for any one of the numerous users of this application to gain access to a system to read the configuration file and then obtain the MQTT broker password. See [7.2. Security](#72-security) for more details.
 
@@ -98,14 +94,15 @@ The project was built with Lazarus 2.0.12 (Free Pascall 3.2.0) on a Mint 20.1 sy
 
 There is a [proof of concept project](poc) in the repository that verifies that a Tasmota configuration can be downloaded.
 
-## 4. Installation and Releases
+<!--
+ xx 4. Installation and Releases
 
 The file `tasmotasbacker-r****.gz`, contains a compressed `x86_64-linux` binary which was tested on Mint 20.1 . Extract the binary `tasmotasbacker` to a directory in the search path such as `~./local/bin/`.  Copy the image `images/tasmotabacker.png` into the same directory. The `installation` directory contains a `tamostasbacker.desktop` file along with rudimentary instructions on how to install the utility in a Mint 20.1 Mate system. Presumably, installation in other Linux distributions would be more or less the same.
 
 Details about installation of an application in Windows are unfortunately not provided. A `x86_64-win64` binary is provided in the `tasmotasbacker0-r****.zip` archive.
+-->
 
-
-## 5. Program Options
+## 4. Program Options
 
 In Linux, the program parameters are saved in the `ini` configuration file named  `~/.config/sigmdel/tasmotabacker/options.ini` where `~` is the user home directory. So the fully expanded file name is
 <pre> /home/&lt;<i>user</i>&gt;/.config/sigmdel/tasmotasbacker/options.ini</pre>
@@ -113,57 +110,40 @@ In Linux, the program parameters are saved in the `ini` configuration file named
 In Windows 10, the file is saved in the local `AppData` folder :
 <pre>  C:\Users\&lt;<i>user</i>&gt;\AppData\Local\sigmdel\tasmotasbacker\options.ini</pre>
 
-Starting with version 0.3.6, all time out are measured in seconds; they were measured in milliseconds in previous versions. In the same version, two parameters, `ConnectAttempts` and `ConnectTimeout`, have been renamed `DownloadAttempts` and `DownloadTimeout` respectively. 
+Starting with version 0.3.6, all timeouts are measured in seconds; they were measured in milliseconds in previous versions. In the same version, two parameters, `ConnectAttempts` and `ConnectTimeout`, have been renamed `DownloadAttempts` and `DownloadTimeout` respectively. 
 
 If updating from a previous version, it may be simpler to delete the `ini` configuration file to avoid leaving orphaned entries in the file.
 
-## 6. Usage
+## 5. Usage
 
 Information on how to use the program can be found on this site: [DIY Tasmota Backups](https://sigmdel.ca/michel/ha/tasmota/tasmota_backups_en.html).
 
 
-## 7. WARNINGS
+## 6. WARNINGS
 
-### 7.1. Timing
+### 6.1. Timing
 
-If an incorrect IP address is given for the MQTT broker the program appears to hang when an MQTT message is sent to find the Tasmota devices. To avoid this problem an attempt to establish a TCP connection with given host and port is made. The MQTT broker will be used only if that connection can be made. The initial page of utility has a `Timeout` field which specifies the maximum time to wait for a reply during that intitial TCP connection. The timeout is specified in seconds, its minimum value is 1 second.
+<!--
+If an incorrect IP address is given for the MQTT broker, the program appears to hang when an MQTT message is sent to find the Tasmota devices. To avoid this problem an attempt to establish a TCP connection with given host and port is made. The MQTT broker will be used only if that connection can be made. The initial page of utility has a `Timeout` field which specifies the maximum time to wait for a reply during that intitial TCP connection. The timeout is specified in seconds, its minimum value is 1 second.
+-->
 
-Because the HTTP requests sent by the utility are blocking, timeouts have to be specified otherwise the program could hang. There are two options that can be tweaked:
+Because the HTTP requests sent by the utility are blocking, timeouts have to be specified otherwise the program could hang. There are two options pertaining to downloads of the Tasmota device configurations that can be tweaked:
 
 3. `Download attempts` - the maximum number of times an HTTP request for the Tasmota configuration is made.
 
 4. `Download timeout` -  the maximum time to wait for a reply. Specified in seconds, the minimum is 1 second.
 
-The default values usually work well on a system with a 4th generation i7 CPU running Linux Mint 20.1. However the timeout had to be increased to 5 or even 6 seconds on a system with a 4th generation i5 running Windows 10 connected to the same local area network. 
+There are two similar options that apply when sending HTTP requests to scan the network for Tasmota devices.
 
-Mileage will vary as per the old chestnut. To help in fixing reasonable values, there are two directives in the `main.pas` unit (named `DEBUG_HTTP_REQUEST` and `DEBUG_BACKUP`) that will log some timing information if defined. To see the time log in Linux, start the application from a terminal. In Windows, the log is saved to a file named `tasmotasbacker.log` in the same directory as the executable when the latter is exited. Here is part of the timing log when `DEBUG_HTTP_REQUEST` is defined.
+1.  `Connect attempts` - the maximum number of times an HTTP request for the hostname is sent to an IP address to establish if it is a Tasmota device.
 
-```
-              time    diff   message
-11:56:34.132856187       0   HttpRequest(url: http://192.168.1.100/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
-11:56:34.132856218      31     request returns after 1 tries with code = 200, data = <!DOCTYPE html>?<html>?<head>? <meta http-equiv="Content-Type" c
-11:56:34.132856234       0   HttpRequest(url: http://192.168.1.101/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
-11:56:34.132856500     266     Exception class EHTTPClient, message Unexpected response status code: 404, code 404, try 1
-11:56:34.132856500       0     request returns after 1 tries with code = 404, data = 
-11:56:34.132856515       0   HttpRequest(url: http://192.168.1.102/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
-11:56:35.132856765     250     request returns after 1 tries with code = 200, data = {"Hostname":"entree"}
-11:56:35.132856765       0   HttpRequest(url: http://192.168.1.102/cm?cmnd=topic, maxtries: 2, timeout: 4000)
-11:56:35.132856890     125     request returns after 1 tries with code = 200, data = {"Topic":"entree"}
-11:56:35.132856921       0   HttpRequest(url: http://192.168.1.103/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
-11:56:35.132857375     454     request returns after 1 tries with code = 200, data = {"Hostname":"lampe-biblio"}
-11:56:35.132857375       0   HttpRequest(url: http://192.168.0.103/cm?cmnd=topic, maxtries: 2, timeout: 4000)
-11:56:35.132857500     125     request returns after 1 tries with code = 200, data = {"Topic":"lampe-biblio"}
-...
-11:56:35.132857531       0   HttpRequest(url: http://192.168.1.155/cm?cmnd=hostname, maxtries: 2, timeout: 4000)
-11:56:39.132861546    4015     Exception class ESocketError, message Connection to 192.168.1.155:80 timed out., code 5, try 1
-11:56:39.132861546       0     http request attemp 1 failed with code: 5
-11:56:47.132869578    8032     Exception class ESocketError, message Connection to 192.168.1.155:80 timed out., code 5, try 2
-11:56:47.132869578       0     http request attemp 2 failed with code: 5
-...
-```
-The fractional part of the seconds entry in the time stamp is the system tick count. The diff column shows the number of tick counts between two entries in the log which is nominally the number of elapsed milliseconds between them. Since this tick counter is reset to 0 for each new HTTP request it is easy to see the delay before the replay is received from the peripheral.  
+2.  `Connect timeout` - the maximum time to wait for a reply. Specified in seconds, the minimum is 1 second.
 
-### 7.2. Security
+Finally, there's a `Timeout` optionsin the MQTT broker. This is the maximum time, in seconds, allowed for establishing a TCP connection with the MQTT broker.
+
+Consult [DIY Tasmota Backups](https://sigmdel.ca/michel/ha/tasmota/tasmota_backups_en.html) for more information on this topic.
+
+### 6.2. Security
 
 Prior to version 0.3.3, the MQTT broker password was stored in plain text in the configuration file. Do not save the MQTT broker password in the `Options` screen in these older versions.
 
@@ -172,13 +152,13 @@ A quick fix was added in version 0.3.3 to encrypt the password. A default encryp
 Note that the MQTT user and password are transmitted in plain text over an HTTP connection, so truly secure handling of the MQTT password will have to wait until communication with the broker using the HTTPS protocol is implemented.
 
 
-## 8. Similar Projects
+## 7. Similar Projects
 
 A version of this project that does not use an MQTT broker to find Tasmota devices is available.
 
 - [tasmotasbacker0](https://github.com/sigmdel/tasmotasbacker0) by sigmdel.
 
-It does not require the `mosquitto` library and only uses HTTP requests to find Tasmota devices and download their configuration. The scan to find devices can be considerable longer than using an MQTT broker. On the other hand it may find Tasmota devices that are not configured to use an MQTT broker or that have a broken MQTT configuration.
+It does not require the `mosquitto` library and only uses HTTP requests to find Tasmota devices and download their configuration. The scan to find devices can be considerably longer than using an MQTT broker. On the other hand, it may find Tasmota devices that are not configured to use an MQTT broker or that have a broken MQTT configuration.
 
 There are two Python scripts on GitHub that do essentially the same thing:
 
@@ -191,7 +171,7 @@ There is also a much more ambitious PHP/Sqlite project:
 
 A thorough search would probably turn up many more references.
 
-## 9. Acknowledgment
+## 8. Acknowledgment
 
 Obviously, this utility would not have been possible without 
 
@@ -201,7 +181,7 @@ Obviously, this utility would not have been possible without
 
 Useful information was obtained from others. Where possible, acknowledgment and references are provided in the source code.
 
-## 10. Licence
+## 9. Licence
 
 The [Eclipse Mosquitto](https://github.com/eclipse/mosquitto) project is dual-licensed under the Eclipse Public License 2.0 and the
 Eclipse Distribution License 1.0.
