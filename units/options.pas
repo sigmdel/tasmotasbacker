@@ -13,6 +13,9 @@ uses
 
 const
   {$IFDEF INCLUDE_MQTT_OPTIONS}
+    {$IFDEF INCLUDE_HTTP_OPTIONS}
+       DEFAULT_DISCOVERY_METHOD = 0;   // MQTT, 1 HTTP
+    {$ENDIF}
   DEFAULT_HOST = '192.168.1.22';
   DEFAULT_PORT = 1883;
   DEFAULT_PASSWORD = '';
@@ -28,7 +31,7 @@ const
   DEFAULT_FIRST_IP = '192.168.0.100';
   DEFAULT_LAST_IP = '192.168.0.200';
   DEFAULT_SCAN_ATTEMPTS = 2;
-  DEFAULT_SCAN_TIMEOUT = 1;
+  DEFAULT_SCAN_TIMEOUT = 1;          // seconds
   {$ENDIF}
 
   // backup options
@@ -59,6 +62,11 @@ type
     FExcludeIPsAction: TIpListAction;
     FIncludeIPsAction: TIPListAction;
 
+      {$IFDEF INCLUDE_MQTT_OPTIONS}
+    FDiscoveryMethod: integer;
+    function GetDiscoveryMethod: integer;
+    procedure SetDiscoveryMethod(AValue: integer);
+      {$ENDIF}
     function GetSubnet: string;
     function GetSubnetBits: integer;
     function GetScanAllIP: boolean;
@@ -75,6 +83,8 @@ type
     procedure SetLastIP(AValue: string);
     procedure SetScanAttempts(AValue: integer);
     procedure SetScanTimeout(AValue: integer);
+
+
     {$ENDIF}
 
     {$IFDEF INCLUDE_MQTT_OPTIONS}
@@ -112,6 +122,9 @@ type
     destructor destroy; override;
 
     {$IFDEF INCLUDE_MQTT_OPTIONS}
+      {$IFDEF INCLUDE_HTTP_OPTIONS}
+    property DiscoveryMethod: integer read GetDiscoveryMethod write SetDiscoveryMethod;
+      {$ENDIF}
     property Host: string read GetHost write SetHost;
     property Port: integer read GetPort write SetPort;
     property User: string read GetUser write SetUser;
@@ -158,6 +171,11 @@ const
   Soptions = 'Options';
 
   {$IFDEF INCLUDE_MQTT_OPTIONS}
+
+    {$IFDEF INCLUDE_HTTP_OPTIONS}
+  SdiscoveryMethod = 'DiscoveryMethod';
+    {$ENDIF}
+
   Shost = 'Host';
   Sport = 'Port';
   Suser = 'User';
@@ -272,6 +290,18 @@ end;
 {$ENDIF}
 
 {$IFDEF INCLUDE_HTTP_OPTIONS}
+
+  {$IFDEF INCLUDE_MQTT_OPTIONS}
+function TParams.GetDiscoveryMethod: integer;
+begin
+  result := ini.ReadInteger(Soptions, SdiscoveryMethod, DEFAULT_DISCOVERY_METHOD);
+end;
+
+procedure TParams.SetDiscoveryMethod(AValue: integer);
+begin
+  ini.WriteInteger(Soptions, SdiscoveryMethod, AValue);
+end;
+  {$ENDIF}
 
 function TParams.GetSubnet: string;
 begin

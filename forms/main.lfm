@@ -41,12 +41,12 @@ object MainForm: TMainForm
         AnchorSideLeft.Side = asrCenter
         AnchorSideTop.Control = Label21
         AnchorSideTop.Side = asrBottom
-        Left = 179
+        Left = 199
         Height = 14
         Top = 36
-        Width = 49
+        Width = 8
         BorderSpacing.Top = 12
-        Caption = 'Label28'
+        Caption = '--'
         ParentColor = False
       end
       object Label29: TLabel
@@ -987,7 +987,7 @@ object MainForm: TMainForm
         FixedCols = 0
         Flat = True
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goSmoothScroll, goCellEllipsis]
-        RowCount = 23
+        RowCount = 24
         TabOrder = 1
         OnClick = GridClick
         OnHeaderSized = GridHeaderSized

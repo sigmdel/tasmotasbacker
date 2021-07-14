@@ -738,6 +738,10 @@ begin
     label28.caption := Format('Version %d.%d.%d', [Major,Minor,Revision])
   else
      label28.caption := '';
+
+  RadioButton5.Checked := params.DiscoveryMethod = 0;
+  RadioButton6.Checked := params.DiscoveryMethod <> 0;
+
   HostEdit.Text := params.Host;
   PortEdit.value := params.Port;
   UserEdit.Text := params.User;
@@ -1138,162 +1142,133 @@ const
     end;
   end;
 
-  procedure setCb(row: integer; const current: string);
+  procedure setCb(row: integer; aVal: boolean);  overload;
   var
     v: string;
   begin
-    if OptionsGrid.cells[2, row] = current then
+    if aVal then
       v := '0'
     else
       v := '1';
     OptionsGrid.cells[0, row] := v;
   end;
 
+  procedure setCb(row: integer; const current: string);
+  begin
+    setCb(row, OptionsGrid.cells[2, row] = current)
+  end;
+
+
 begin
   with OptionsGrid do begin
-    cells[1, 1] := 'MQTT host';
-    cells[2, 1] := HostEdit.Text;
-    setCb(1, params.host);
-
-    cells[1, 2] := 'MQTT port';
-    cells[2, 2] := PortEdit.Text;
-    if PortEdit.value = params.port then
-      cells[0, 2] := '0'
+    cells[1, 1] := 'Discovery method';
+    if RadioButton5.checked then
+      cells[2, 1] := 'MQTT query'
     else
-      cells[0, 2] := '1';
+      cells[2, 1] := 'HTTP scan';
+    setCb(1, RadioButton5.Checked and (params.DiscoveryMethod = 0));
 
-    cells[1, 3] := 'MQTT user';
-    cells[2, 3] := UserEdit.Text;
-    setCb(3, params.user);
+    cells[1, 2] := 'MQTT host';
+    cells[2, 2] := HostEdit.Text;
+    setCb(2, params.host);
 
-    cells[1, 4] := 'MQTT password';
+    cells[1, 3] := 'MQTT port';
+    cells[2, 3] := PortEdit.Text;
+    setCb(3, PortEdit.value = params.port);
+
+    cells[1, 4] := 'MQTT user';
+    cells[2, 4] := UserEdit.Text;
+    setCb(4, params.user);
+
+    cells[1, 5] := 'MQTT password';
     if length(PasswordEdit.Text) < 1 then
-      cells[2, 4] := ''
+      cells[2, 5] := ''
     else
-      cells[2, 4] := pwddots;
-    if PasswordEdit.Text = params.password then
-      cells[0, 4] := '0'
-    else
-      cells[0, 4] := '1';
+      cells[2, 5] := pwddots;
+    setCb(5, PasswordEdit.Text = params.password);
 
-    cells[1, 5] := 'MQTT topic';
-    cells[2, 5] := TopicEdit.Text;
-    setCb(5, params.topic);
+    cells[1, 6] := 'MQTT topic';
+    cells[2, 6] := TopicEdit.Text;
+    setCb(6, params.topic);
 
-    cells[1, 6] := 'MQTT timeout';
-    cells[2, 6] := MqttTimeoutEdit.Text;
-    if MqttTimeoutEdit.value = params.MqttTimeout then
-      cells[0, 6] := '0'
-    else
-      cells[0, 6] := '1';
+    cells[1, 7] := 'MQTT timeout';
+    cells[2, 7] := MqttTimeoutEdit.Text;
+    setCb(7, MqttTimeoutEdit.value = params.MqttTimeout);
 
-    cells[1, 7] := 'Subnet';
-    cells[2, 7] := SubnetEdit.Text;
-    setCb(7, params.subnet);
+    cells[1, 8] := 'Subnet';
+    cells[2, 8] := SubnetEdit.Text;
+    setCb(8, params.subnet);
 
-    cells[1, 8] := 'Subnet bits';
-    cells[2, 8] := SubnetBitsEdit.Text;
-    if SubnetBitsEdit.value = params.subnetbits then
-      cells[0, 8] := '0'
-    else
-      cells[0, 8] := '1';
+    cells[1, 9] := 'Subnet bits';
+    cells[2, 9] := SubnetBitsEdit.Text;
+    setCb(9, SubnetBitsEdit.value = params.subnetbits);
 
-    cells[1, 9] := 'Scan';
+    cells[1, 10] := 'Scan';
     if FullRangeRadioButton.checked then
-      cells[2, 9] := 'All IP in subnet'
+      cells[2, 10] := 'All IP in subnet'
     else
-      cells[2, 9] := 'IP in range';
-    if FullRangeRadioButton.checked = params.ScanAllIP then
-      cells[0, 9] := '0'
-    else
-      cells[0, 9] := '1';
+      cells[2, 10] := 'IP in range';
+    setCb(10, FullRangeRadioButton.checked = params.ScanAllIP);
 
-    cells[1, 10] := 'First IP';
-    cells[2, 10] := FirstIPEdit.Text;
-    setCb(10, params.FirstIP);
+    cells[1, 11] := 'First IP';
+    cells[2, 11] := FirstIPEdit.Text;
+    setCb(11, params.FirstIP);
 
-    cells[1, 11] := 'Last IP';
-    cells[2, 11] := LastIPEdit.Text;
-    setCb(11, params.LastIP);
+    cells[1, 12] := 'Last IP';
+    cells[2, 12] := LastIPEdit.Text;
+    setCb(12, params.LastIP);
 
-    cells[1, 12] := 'Exclude IP addresses';
-    cells[2, 12] := ListIPs(ExcludeListBox.Items);
-    if ExcludeListBox.Items.Equals(params.ExcludeIPs) then
-      cells[0, 12] := '0'
-    else
-      cells[0, 12] := '1';
+    cells[1, 13] := 'Exclude IP addresses';
+    cells[2, 13] := ListIPs(ExcludeListBox.Items);
+    setCb(13, ExcludeListBox.Items.Equals(params.ExcludeIPs));
 
-    cells[1, 13] := 'Include IP addresses';
-    cells[2, 13] := ListIPs(IncludeListBox.Items);
-    if IncludeListBox.Items.Equals(params.IncludeIPs) then
-      cells[0, 13] := '0'
-    else
-      cells[0, 13] := '1';
+    cells[1, 14] := 'Include IP addresses';
+    cells[2, 14] := ListIPs(IncludeListBox.Items);
+    setCb(14, IncludeListBox.Items.Equals(params.IncludeIPs));
 
-    cells[1, 14] := 'Scan connect attempts';
-    cells[2, 14] := ScanAttemptsEdit.Text;
-    if ScanAttemptsEdit.value = params.ScanAttempts then
-      cells[0, 14] := '0'
-    else
-      cells[0, 14] := '1';
+    cells[1, 15] := 'Scan connect attempts';
+    cells[2, 15] := ScanAttemptsEdit.Text;
+    setCb(15, ScanAttemptsEdit.value = params.ScanAttempts);
 
-    cells[1, 15] := 'Scan connect timeout';
-    cells[2, 15] := ScanTimeoutEdit.Text;
-    if ScanTimeOutEdit.value = params.ScanTimeout then
-      cells[0, 15] := '0'
-    else
-      cells[0, 15] := '1';
+    cells[1, 16] := 'Scan connect timeout';
+    cells[2, 16] := ScanTimeoutEdit.Text;
+    setCb(16, ScanTimeOutEdit.value = params.ScanTimeout);
 
-    cells[1, 16] := 'Backup directory';
-    cells[2, 16] := DirectoryEdit.Directory;
-    setCb(16, params.directory);
+    cells[1, 17] := 'Backup directory';
+    cells[2, 17] := DirectoryEdit.Directory;
+    setCb(17, params.directory);
 
-    cells[1, 17] := 'Backup extension';
-    cells[2, 17] := ExtensionEdit.Text;
-    setCb(17, params.extension);
+    cells[1, 18] := 'Backup extension';
+    cells[2, 18] := ExtensionEdit.Text;
+    setCb(18, params.extension);
 
-    cells[1, 18] := 'Date format';
-    cells[2, 18] := DateformatEdit.Text;
-    if DateformatEdit.ItemIndex = params.dateformat then
-      cells[0, 18] := '0'
-    else
-      cells[0, 18] := '1';
+    cells[1, 19] := 'Date format';
+    cells[2, 19] := DateformatEdit.Text;
+    setCb(19, DateformatEdit.ItemIndex = params.dateformat);
 
-    cells[1, 19] := 'Filename format';
+    cells[1, 20] := 'Filename format';
     if radioButton1.Checked then
-      cells[2, 19] := ChangeFileExt(radiobutton1.caption, '')
+      cells[2, 20] := ChangeFileExt(radiobutton1.caption, '')
     else
-      cells[2, 19] := ChangeFileExt(radiobutton2.caption, '');
-    if (radioButton1.checked and (params.filenameformat = 0))
-    or (radioButton2.checked and (params.filenameformat = 1)) then
-      cells[0, 19] := '0'
-    else
-      cells[0, 19] := '1';
+      cells[2, 20] := ChangeFileExt(radiobutton2.caption, '');
+    setCb(20, (radioButton1.checked and (params.filenameformat = 0))
+           or (radioButton2.checked and (params.filenameformat = 1)));
 
-    cells[1, 20] := 'Device name';
+    cells[1, 21] := 'Device name';
     if radioButton3.Checked then
-      cells[2, 20] := 'Topic'
+      cells[2, 21] := 'Topic'
     else
-      cells[2, 20] := 'Hostname';
-    if (radioButton3.checked and (params.devicename = 0))
-    or (radioButton4.checked and (params.devicename = 1)) then
-      cells[0, 20] := '0'
-    else
-      cells[0, 20] := '1';
+      cells[2, 21] := 'Hostname';
+    setCb(21, (radioButton3.checked and (params.devicename = 0))
+           or (radioButton4.checked and (params.devicename = 1)));
 
-    cells[1, 21] := 'Download attempts';
-    cells[2, 21] := DownloadAttemptsEdit.Text;
-    if DownloadAttemptsEdit.value = params.DownloadAttempts then
-      cells[0, 21] := '0'
-    else
-      cells[0, 21] := '1';
+    cells[1, 22] := 'Download attempts';
+    cells[2, 22] := DownloadAttemptsEdit.Text;
+    setCb(22, DownloadAttemptsEdit.value = params.DownloadAttempts);
 
-    cells[1, 22] := 'Download timeout';
-    cells[2, 22] := DownloadTimeoutEdit.Text;
-    if DownloadTimeoutEdit.value = params.DownloadTimeout then
-      cells[0, 22] := '0'
-    else
-      cells[0, 22] := '1';
+    cells[1, 23] := 'Download timeout';
+    cells[2, 23] := DownloadTimeoutEdit.Text;
+    setCb(23, DownloadTimeoutEdit.value = params.DownloadTimeout);
   end;
   Notebook1.PageIndex := 5;
   AllOptionsCheckBox.SetFocus;
@@ -1354,30 +1329,29 @@ begin
     if OptionsGrid.cells[0, i] = '0' then
        continue;
     case i of
-       1: params.Host := DEFAULT_HOST;
-       2: params.Port := DEFAULT_PORT;
-       3: params.User := DEFAULT_USER;
-       4: params.Password := DEFAULT_PASSWORD;
-       5: params.Topic := DEFAULT_TOPIC;
-       6: params.MqttTimeout := DEFAULT_MQTT_TIMEOUT;
-
-       7: params.Subnet := DEFAULT_SUBNET;
-       8: params.SubnetBits := DEFAULT_SUBNET_BITS;
-       9: params.ScanAllIP := DEFAULT_SCAN_ALL_IP;
-      10: params.FirstiP := DEFAULT_FIRST_IP;
-      11: params.LastIP := DEFAULT_LAST_IP;
-      12: params.ExcludeIPsAction := ilaErase;
-      13: params.IncludeIPsAction := ilaErase;
-      14: params.ScanAttempts := DEFAULT_SCAN_ATTEMPTS;
-      15: params.ScanTimeout := DEFAULT_SCAN_TIMEOUT;
-
-      16: params.Directory := DEFAULT_BACK_DIRECTORY;
-      17: params.Extension := DEFAULT_EXTENSION;
-      18: params.DateFormat := DEFAUT_DATE_FORMAT;
-      19: params.FilenameFormat := DEFAULT_FILENAME_FORMAT;
-      20: params.DeviceName := DEFAULT_DEVICE_NAME;
-      21: params.DownloadAttempts := DEFAULT_DOWNLOAD_ATTEMPTS;
-      22: params.DownloadTimeout := DEFAULT_DOWNLOAD_TIMEOUT;
+       1: params.DiscoveryMethod := DEFAULT_DISCOVERY_METHOD;
+       2: params.Host := DEFAULT_HOST;
+       3: params.Port := DEFAULT_PORT;
+       4: params.User := DEFAULT_USER;
+       5: params.Password := DEFAULT_PASSWORD;
+       6: params.Topic := DEFAULT_TOPIC;
+       7: params.MqttTimeout := DEFAULT_MQTT_TIMEOUT;
+       8: params.Subnet := DEFAULT_SUBNET;
+       9: params.SubnetBits := DEFAULT_SUBNET_BITS;
+      10: params.ScanAllIP := DEFAULT_SCAN_ALL_IP;
+      11: params.FirstiP := DEFAULT_FIRST_IP;
+      12: params.LastIP := DEFAULT_LAST_IP;
+      13: params.ExcludeIPsAction := ilaErase;
+      14: params.IncludeIPsAction := ilaErase;
+      15: params.ScanAttempts := DEFAULT_SCAN_ATTEMPTS;
+      16: params.ScanTimeout := DEFAULT_SCAN_TIMEOUT;
+      17: params.Directory := DEFAULT_BACK_DIRECTORY;
+      18: params.Extension := DEFAULT_EXTENSION;
+      19: params.DateFormat := DEFAUT_DATE_FORMAT;
+      20: params.FilenameFormat := DEFAULT_FILENAME_FORMAT;
+      21: params.DeviceName := DEFAULT_DEVICE_NAME;
+      22: params.DownloadAttempts := DEFAULT_DOWNLOAD_ATTEMPTS;
+      23: params.DownloadTimeout := DEFAULT_DOWNLOAD_TIMEOUT;
      end;
   end;
   close;
@@ -1406,36 +1380,39 @@ begin
     if OptionsGrid.cells[0, i] = '0' then
        continue;
     case i of
-       1: params.Host := OptionsGrid.cells[2, i];
-       2: params.Port := PortEdit.value;
-       3: params.User := OptionsGrid.cells[2, i];
-       4: params.Password := PasswordEdit.Text;
-       5: params.Topic := OptionsGrid.cells[2, i];
-       6: params.MqttTimeout := MqttTimeoutEdit.value;
+       1: if RadioButton5.Checked then
+            params.DiscoveryMethod := 0
+          else
+            params.DiscoveryMethod := 1;
+       2: params.Host := OptionsGrid.cells[2, i];
+       3: params.Port := PortEdit.value;
+       4: params.User := OptionsGrid.cells[2, i];
+       5: params.Password := PasswordEdit.Text;
+       6: params.Topic := OptionsGrid.cells[2, i];
+       7: params.MqttTimeout := MqttTimeoutEdit.value;
+       8: params.Subnet := OptionsGrid.cells[2, i];
+       9: params.SubnetBits := SubnetBitsEdit.value;
+      10: params.ScanAllIP := FullRangeRadioButton.Checked;
+      11: params.FirstIP := OptionsGrid.cells[2, i];
+      12: params.LastIP := OptionsGrid.cells[2, i];
+      13: begin params.ExcludeIPsAction := ilaSave; params.ExcludeIPs := ExcludeListBox.Items; end;
+      14: begin params.IncludeIPsAction := ilaSave; params.IncludeIPs := IncludeListBox.Items; end;
+      15: params.ScanAttempts := ScanAttemptsEdit.value;
+      16: params.ScanTimeout := ScanTimeoutEdit.value;
+      17: params.directory := OptionsGrid.cells[2, i];
+      18: params.extension := OptionsGrid.cells[2, i];
+      19: params.dateformat := DateFormatEdit.ItemIndex;
 
-       7: params.Subnet := OptionsGrid.cells[2, i];
-       8: params.SubnetBits := SubnetBitsEdit.value;
-       9: params.ScanAllIP := FullRangeRadioButton.Checked;
-      10: params.FirstIP := OptionsGrid.cells[2, i];
-      11: params.LastIP := OptionsGrid.cells[2, i];
-      12: begin params.ExcludeIPsAction := ilaSave; params.ExcludeIPs := ExcludeListBox.Items; end;
-      13: begin params.IncludeIPsAction := ilaSave; params.IncludeIPs := IncludeListBox.Items; end;
-      14: params.ScanAttempts := ScanAttemptsEdit.value;
-      15: params.ScanTimeout := ScanTimeoutEdit.value;
-
-      16: params.directory := OptionsGrid.cells[2, i];
-      17: params.extension := OptionsGrid.cells[2, i];
-      18: params.dateformat := DateFormatEdit.ItemIndex;
-      19: if RadioButton1.Checked then
+      20: if RadioButton1.Checked then
             params.filenameformat := 0
           else
             params.filenameformat := 1;
-      20: if RadioButton3.Checked then
+      21: if RadioButton3.Checked then
             params.devicename := 0
           else
             params.devicename := 1;
-      21: params.DownloadAttempts := DownloadAttemptsEdit.value;
-      22: params.DownloadTimeout := DownloadTimeoutEdit.value;
+      22: params.DownloadAttempts := DownloadAttemptsEdit.value;
+      23: params.DownloadTimeout := DownloadTimeoutEdit.value;
      end;
   end;
   close;
