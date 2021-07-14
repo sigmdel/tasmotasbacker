@@ -17,6 +17,7 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MinorVersionNr Value="9"/>
+      <RevisionNr Value="1"/>
       <StringTable CompanyName="sigmdel.ca" LegalCopyright="0BDS" OriginalFilename="tasmotasbacker" ProductName="Tasmotas Backer"/>
     </VersionInfo>
     <BuildModes Count="3">
@@ -62,11 +63,13 @@
           <Other>
             <CustomOptions Value="-dUseCThreads
 -dINCLUDE_MQTT_OPTIONS
--dINCLUDE_HTTP_OPTIONS"/>
-            <OtherDefines Count="3">
+-dINCLUDE_HTTP_OPTIONS
+-dDYNAMIC_MOSQLIB"/>
+            <OtherDefines Count="4">
               <Define0 Value="UseCThreads"/>
               <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
               <Define2 Value="INCLUDE_HTTP_OPTIONS"/>
+              <Define3 Value="DYNAMIC_MOSQLIB"/>
             </OtherDefines>
           </Other>
         </CompilerOptions>
@@ -102,10 +105,13 @@
           <Other>
             <CustomOptions Value="-dUseCThreads
 -dINCLUDE_MQTT_OPTIONS
--dINCLUDE_HTTP_OPTIONS"/>
-            <OtherDefines Count="2">
+-dINCLUDE_HTTP_OPTIONS
+-dDYNAMIC_MOSQLIB"/>
+            <OtherDefines Count="4">
               <Define0 Value="UseCThreads"/>
               <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
+              <Define2 Value="INCLUDE_HTTP_OPTIONS"/>
+              <Define3 Value="DYNAMIC_MOSQLIB"/>
             </OtherDefines>
           </Other>
         </CompilerOptions>
@@ -199,7 +205,14 @@
     <Other>
       <CustomOptions Value="-dUseCThreads
 -dINCLUDE_MQTT_OPTIONS
--dINCLUDE_HTTP_OPTIONS"/>
+-dINCLUDE_HTTP_OPTIONS
+-dDYNAMIC_MOSQLIB"/>
+      <OtherDefines Count="4">
+        <Define0 Value="UseCThreads"/>
+        <Define1 Value="INCLUDE_MQTT_OPTIONS"/>
+        <Define2 Value="INCLUDE_HTTP_OPTIONS"/>
+        <Define3 Value="DYNAMIC_MOSQLIB"/>
+      </OtherDefines>
     </Other>
   </CompilerOptions>
   <Debugging>

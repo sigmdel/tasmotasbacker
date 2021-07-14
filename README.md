@@ -1,8 +1,8 @@
 # tasmotasbacker : Tasmotas Backer
 
-**Version 0.9.0** (July 12, 2021)
+**Version 0.9.1** (July 14, 2021)
 
-A utility that can back up the configuration of all Tasmota devices on a local network. Discovery of Tasmota devices can be done by querying them through an MQTT broker or by performing an HTTP scan of IP addresses on the LAN. 
+A utility to back up the configuration of all Tasmota devices on a local network. Discovery of Tasmota devices can be done by querying them through an MQTT broker or by performing an HTTP scan of IP addresses on the LAN. 
 
 The [Eclipse mosquitto](https://mosquitto.org/) library is used to exchange messages with the MQTT broker. Should the library not be installed then the utility will run.
 
@@ -35,10 +35,12 @@ Two Free Pascal units are required
 
 These files, found in the [mosquitto-p](mosquitto-p/) directory, are copied from the [GitHub repository](https://github.com/chainq/mosquitto-p) with the same name by Károly Balogh (chainq).
 
-In order to discover Tasmota devices by MQTT message to the Tasmota group topic, the  [Eclipse mosquitto](https://mosquitto.org/) library must be installed on the system. The program will work if the library is not installed, but of course, an HTTP scan will have to be used to identify Tasmota devices on the network. 
+In order to discover Tasmota devices by MQTT message to the Tasmota group topic or topics, the  [Eclipse mosquitto](https://mosquitto.org/) library must be installed on the system. The program will work if the library is not installed, but of course, an HTTP scan will have to be used to identify Tasmota devices on the network. 
+
+### Brief instructions on installing the optional `mosquitto` library
 
 
-### 1.1. Linux
+#### Linux (Debian systems)
 
 In Debian-based systems, the libmosquitto  packages can be installed with a package manager such as [Synaptic](http://www.nongnu.org/synaptic/) or from the command line.
 
@@ -46,8 +48,7 @@ In Debian-based systems, the libmosquitto  packages can be installed with a pack
 
 Note that the first package, `libmosquitto1`, will probably already be installed if the mosquitto-clients package is available on the system. There is no requirement to install the mosquitto MQTT broker.
 
-### 1.2. Windows 10
-
+#### Windows 10
 
 1. Get the latest binary package from [Eclipse mosquitto Download](https://mosquitto.org/download/). Version 2.0.10 is available as of May 5, 2021. Chose the appropriate 64-bit installer (`mosquitto-2.0.10-install-windows-x64.exe`) or 32-bit installer (`mosquitto-2.0.10-install-windows-x32.exe`). 
 
@@ -74,15 +75,21 @@ Note that the first package, `libmosquitto1`, will probably already be installed
 
 Ultimately, if a mosquitto MQTT broker is to be run on the system, it may make more sense to simply copy the executable into the `mosquitto` directory along side the `mosquitto_pub.exe` and `mosquitto_sub.exe` utilities it emulates.
 
+
 ## 2. Compiling
 
 The repository is self-contained (except for the mosquitto library of course), so creating this tool should be straightforward. Clone the repository, start the Lazarus IDE, load the project, and compile. 
 
 When compiling a final version, it would be advisable to heed the following advice.
 
-1. Ensure that the directives `UseCThreads`, `INCLUDE_MQTT_OPTIONS` and `INCLUDE_HTTP_OPTIONS` are added in the `Personalised Options` in `Project Options /Compiler Options`.
+1. Ensure that the directives 
+ - `UseCThreads`, 
+ - `INCLUDE_MQTT_OPTIONS`, 
+ - `INCLUDE_HTTP_OPTIONS`,
+ - `DYNAMIC_MOSQLIB`,  
+ are added in the `Personalised Options` in `Project Options /Compiler Options`. Optionally, the last directive may be omited. In that case, the `mosquitto` library will be linked in at compile time. Consequently, the library must be present when the program is compiled. Futhermore, the utility will abort immediately if the library is not present on the system. (Programmer's Guide: Using a library in a pascal program). Because the extra time to load the library at run-time is negligeable and it avoids theses problems, it is best to define the directive.
 
-1.  Modify the default password encryption key `DEFAULT_KEY` in the `units/pwd.pas` file. That way it will not be easy for any one of the numerous users of this application to gain access to a system to read the configuration file and then obtain the MQTT broker password. See [7.2. Security](#72-security) for more details.
+2.  Modify the default password encryption key `DEFAULT_KEY` in the `units/pwd.pas` file. That way it will not be easy for any one of the numerous users of this application to gain access to a system to read the configuration file and then obtain the MQTT broker password. See [7.2. Security](#72-security) for more details.
 
 2.  The application icon should be defined, but if it is not then select `Load Icon` in `Project / Project / Project Options` in the Lazarus IDE. The `tasmotabacker.png` image in the `images` directory can be used.
 
@@ -156,9 +163,14 @@ Note that the MQTT user and password are transmitted in plain text over an HTTP 
 
 A version of this project that does not use an MQTT broker to find Tasmota devices is available.
 
-- [tasmotasbacker0](https://github.com/sigmdel/tasmotasbacker0) by sigmdel.
+- [tasmotasbacker0](https://github.com/sigmdel/tasmotasbacker0).
 
-It does not require the `mosquitto` library and only uses HTTP requests to find Tasmota devices and download their configuration. The scan to find devices can be considerably longer than using an MQTT broker. On the other hand, it may find Tasmota devices that are not configured to use an MQTT broker or that have a broken MQTT configuration.
+It does not require the `mosquitto` library and only uses HTTP requests to find Tasmota devices and download their configuration. There is also an older version of the project 
+
+
+- [tasmotasbacker-mqtt-only](https://github.com/sigmdel/tasmotasbacker/tree/mqtt-only)
+
+that only usess MQTT messages to discover devices and therefore requirs the `mosquitto` library.
 
 There are two Python scripts on GitHub that do essentially the same thing:
 
