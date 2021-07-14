@@ -11,18 +11,20 @@ The [Eclipse mosquitto](https://mosquitto.org/) library is used to exchange mess
 <!-- TOC -->
 
 - [1. Requirements](#1-requirements)
-    - [1.1. Linux](#11-linux)
-    - [1.2. Windows 10](#12-windows-10)
+    - [1.1. Brief instructions on installing the optional `mosquitto` library](#11-brief-instructions-on-installing-the-optional-mosquitto-library)
+        - [1.1.1. Linux (Debian systems)](#111-linux-debian-systems)
+        - [1.1.2. Windows 10](#112-windows-10)
 - [2. Compiling](#2-compiling)
 - [3. Testing](#3-testing)
-- [4. Program Options](#4-program-options)
-- [5. Usage](#5-usage)
-- [6. WARNINGS](#6-warnings)
-    - [6.1. Timing](#61-timing)
-    - [6.2. Security](#62-security)
-- [7. Similar Projects](#7-similar-projects)
-- [8. Acknowledgment](#8-acknowledgment)
-- [9. Licence](#9-licence)
+- [4. Installation and Releases](#4-installation-and-releases)
+- [5. Program Options](#5-program-options)
+- [6. Usage](#6-usage)
+- [7. WARNINGS](#7-warnings)
+    - [7.1. Timing](#71-timing)
+    - [7.2. Security](#72-security)
+- [8. Similar Projects](#8-similar-projects)
+- [9. Acknowledgment](#9-acknowledgment)
+- [10. Licence](#10-licence)
 
 <!-- /TOC -->
 
@@ -37,10 +39,10 @@ These files, found in the [mosquitto-p](mosquitto-p/) directory, are copied from
 
 In order to discover Tasmota devices by MQTT message to the Tasmota group topic or topics, the  [Eclipse mosquitto](https://mosquitto.org/) library must be installed on the system. The program will work if the library is not installed, but of course, an HTTP scan will have to be used to identify Tasmota devices on the network. 
 
-### Brief instructions on installing the optional `mosquitto` library
+### 1.1. Brief instructions on installing the optional `mosquitto` library
 
 
-#### Linux (Debian systems)
+#### 1.1.1. Linux (Debian systems)
 
 In Debian-based systems, the libmosquitto  packages can be installed with a package manager such as [Synaptic](http://www.nongnu.org/synaptic/) or from the command line.
 
@@ -48,7 +50,7 @@ In Debian-based systems, the libmosquitto  packages can be installed with a pack
 
 Note that the first package, `libmosquitto1`, will probably already be installed if the mosquitto-clients package is available on the system. There is no requirement to install the mosquitto MQTT broker.
 
-#### Windows 10
+#### 1.1.2. Windows 10
 
 1. Get the latest binary package from [Eclipse mosquitto Download](https://mosquitto.org/download/). Version 2.0.10 is available as of May 5, 2021. Chose the appropriate 64-bit installer (`mosquitto-2.0.10-install-windows-x64.exe`) or 32-bit installer (`mosquitto-2.0.10-install-windows-x32.exe`). 
 
@@ -71,9 +73,9 @@ Note that the first package, `libmosquitto1`, will probably already be installed
         C:\Program Files\mosquitto\mosquittopp.dll
 </pre> to the same folder containing the compiled `lazmqttc.exe` executable. Depending on use, they may not all be necessary, but the first two are needed without doubt. 
 
->> It is left as an exercise for knowledgable Windows users to find a more elegant way of ensuring that the DLLs are found.
+>> It is left as an exercise for knowledgeable Windows users to find a more elegant way of ensuring that the DLLs are found.
 
-Ultimately, if a mosquitto MQTT broker is to be run on the system, it may make more sense to simply copy the executable into the `mosquitto` directory along side the `mosquitto_pub.exe` and `mosquitto_sub.exe` utilities it emulates.
+Ultimately, if a mosquitto MQTT broker is to be run on the system, it may make more sense to simply copy the executable into the `mosquitto` directory alongside the `mosquitto_pub.exe` and `mosquitto_sub.exe` utilities it emulates.
 
 
 ## 2. Compiling
@@ -87,7 +89,7 @@ When compiling a final version, it would be advisable to heed the following advi
  - `INCLUDE_MQTT_OPTIONS`, 
  - `INCLUDE_HTTP_OPTIONS`,
  - `DYNAMIC_MOSQLIB`,  
- are added in the `Personalised Options` in `Project Options /Compiler Options`. Optionally, the last directive may be omited. In that case, the `mosquitto` library will be linked in at compile time. Consequently, the library must be present when the program is compiled. Futhermore, the utility will abort immediately if the library is not present on the system. (Programmer's Guide: Using a library in a pascal program). Because the extra time to load the library at run-time is negligeable and it avoids theses problems, it is best to define the directive.
+ are added in the `Personalised Options` in `Project Options /Compiler Options`. Optionally, the last directive may be omitted. In that case, the `mosquitto` library will be linked in at compile time. Consequently, the utility will abort immediately when run on systems where the library is not installed. Because the extra time to load the library at run-time is negligible and it avoids this problem, it is best to define the directive.
 
 2.  Modify the default password encryption key `DEFAULT_KEY` in the `units/pwd.pas` file. That way it will not be easy for any one of the numerous users of this application to gain access to a system to read the configuration file and then obtain the MQTT broker password. See [7.2. Security](#72-security) for more details.
 
@@ -101,15 +103,24 @@ The project was built with Lazarus 2.0.12 (Free Pascall 3.2.0) on a Mint 20.1 sy
 
 There is a [proof of concept project](poc) in the repository that verifies that a Tasmota configuration can be downloaded.
 
-<!--
- xx 4. Installation and Releases
 
-The file `tasmotasbacker-r****.gz`, contains a compressed `x86_64-linux` binary which was tested on Mint 20.1 . Extract the binary `tasmotasbacker` to a directory in the search path such as `~./local/bin/`.  Copy the image `images/tasmotabacker.png` into the same directory. The `installation` directory contains a `tamostasbacker.desktop` file along with rudimentary instructions on how to install the utility in a Mint 20.1 Mate system. Presumably, installation in other Linux distributions would be more or less the same.
+## 4. Releases and Installation
 
-Details about installation of an application in Windows are unfortunately not provided. A `x86_64-win64` binary is provided in the `tasmotasbacker0-r****.zip` archive.
--->
+Two executable beta versions of the utility have been released:
 
-## 4. Program Options
+- Linux Mint 20.1: `tasmotasbacker-v****.gz` (`x86_64-linux` binary).
+
+- Windows 10: `tasmotasbacker-v****.zip` (`x86_64-win64` binary).
+
+In both cases the exectuable must be extracted from the archive and, to get full advantage of the application, the `mosquitto` library should be installed on the system as [explained above](#11-brief-instructions-on-installing-the-optional-mosquitto-library).
+
+To complete the installation in Linux copy the executable `tasmotasbacker` to a directory in the search path such as `~./local/bin/`.  Copy the image `images/tasmotabacker.png` into the same directory. The `installation` directory in this repository contains a `tamostasbacker.desktop` file along with rudimentary instructions on how to install the utility in a Mint 20.1 Mate system. Presumably, installation in other Linux distributions would be more or less the same. 
+
+Unfortunately, details about installation of an application in Windows are not provided. 
+
+
+
+## 5. Program Options
 
 In Linux, the program parameters are saved in the `ini` configuration file named  `~/.config/sigmdel/tasmotabacker/options.ini` where `~` is the user home directory. So the fully expanded file name is
 <pre> /home/&lt;<i>user</i>&gt;/.config/sigmdel/tasmotasbacker/options.ini</pre>
@@ -121,17 +132,17 @@ Starting with version 0.3.6, all timeouts are measured in seconds; they were mea
 
 If updating from a previous version, it may be simpler to delete the `ini` configuration file to avoid leaving orphaned entries in the file.
 
-## 5. Usage
+## 6. Usage
 
 Information on how to use the program can be found on this site: [DIY Tasmota Backups](https://sigmdel.ca/michel/ha/tasmota/tasmota_backups_en.html).
 
 
-## 6. WARNINGS
+## 7. WARNINGS
 
-### 6.1. Timing
+### 7.1. Timing
 
 <!--
-If an incorrect IP address is given for the MQTT broker, the program appears to hang when an MQTT message is sent to find the Tasmota devices. To avoid this problem an attempt to establish a TCP connection with given host and port is made. The MQTT broker will be used only if that connection can be made. The initial page of utility has a `Timeout` field which specifies the maximum time to wait for a reply during that intitial TCP connection. The timeout is specified in seconds, its minimum value is 1 second.
+If an incorrect IP address is given for the MQTT broker, the program appears to hang when an MQTT message is sent to find the Tasmota devices. To avoid this problem an attempt to establish a TCP connection with given host and port is made. The MQTT broker will be used only if that connection can be made. The initial page of the utility has a `Timeout` field which specifies the maximum time to wait for a reply during that initial TCP connection. The timeout is specified in seconds, its minimum value is 1 second.
 -->
 
 Because the HTTP requests sent by the utility are blocking, timeouts have to be specified otherwise the program could hang. There are two options pertaining to downloads of the Tasmota device configurations that can be tweaked:
@@ -150,7 +161,7 @@ Finally, there's a `Timeout` optionsin the MQTT broker. This is the maximum time
 
 Consult [DIY Tasmota Backups](https://sigmdel.ca/michel/ha/tasmota/tasmota_backups_en.html) for more information on this topic.
 
-### 6.2. Security
+### 7.2. Security
 
 Prior to version 0.3.3, the MQTT broker password was stored in plain text in the configuration file. Do not save the MQTT broker password in the `Options` screen in these older versions.
 
@@ -159,20 +170,20 @@ A quick fix was added in version 0.3.3 to encrypt the password. A default encryp
 Note that the MQTT user and password are transmitted in plain text over an HTTP connection, so truly secure handling of the MQTT password will have to wait until communication with the broker using the HTTPS protocol is implemented.
 
 
-## 7. Similar Projects
+## 8. Similar Projects
 
 A version of this project that does not use an MQTT broker to find Tasmota devices is available.
 
-- [tasmotasbacker0](https://github.com/sigmdel/tasmotasbacker0).
+- [tasmotasbacker0](https://github.com/sigmdel/tasmotasbacker0) (as in tasmotasbackerZero).
 
 It does not require the `mosquitto` library and only uses HTTP requests to find Tasmota devices and download their configuration. There is also an older version of the project 
 
 
-- [tasmotasbacker-mqtt-only](https://github.com/sigmdel/tasmotasbacker/tree/mqtt-only)
+- [tasmotasbacker mqtt-only](https://github.com/sigmdel/tasmotasbacker/tree/mqtt-only)
 
-that only usess MQTT messages to discover devices and therefore requirs the `mosquitto` library.
+that discovers Tasmota devices by MQTT messages only and therefore requires the `mosquitto` library.
 
-There are two Python scripts on GitHub that do essentially the same thing:
+There are two Python scripts on GitHub that do essentially the same as [tasmotasbacker0](https://github.com/sigmdel/tasmotasbacker0):
 
 - [tas-backup](https://github.com/dragonflyuk) by dragonflyuk,
 - [Tasmota-Config-Backup](https://github.com/rt400/Tasmota-Config-Backup/blob/master/tasmota_backup.py) by Yuval (rt400).
@@ -183,7 +194,7 @@ There is also a much more ambitious PHP/Sqlite project:
 
 A thorough search would probably turn up many more references.
 
-## 8. Acknowledgment
+## 9. Acknowledgment
 
 Obviously, this utility would not have been possible without 
 
@@ -193,7 +204,7 @@ Obviously, this utility would not have been possible without
 
 Useful information was obtained from others. Where possible, acknowledgment and references are provided in the source code.
 
-## 9. Licence
+## 10. Licence
 
 The [Eclipse Mosquitto](https://github.com/eclipse/mosquitto) project is dual-licensed under the Eclipse Public License 2.0 and the
 Eclipse Distribution License 1.0.
