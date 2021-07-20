@@ -15,7 +15,7 @@ object MainForm: TMainForm
     Height = 330
     Top = 0
     Width = 406
-    PageIndex = 0
+    PageIndex = 3
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
@@ -189,6 +189,30 @@ object MainForm: TMainForm
         BorderSpacing.Top = 6
         Caption = 'With HTTP scan'
         TabOrder = 2
+      end
+      object Label30: TLabel
+        AnchorSideLeft.Control = Label22
+        AnchorSideTop.Control = RadioButton6
+        AnchorSideTop.Side = asrBottom
+        Left = 12
+        Height = 14
+        Top = 163
+        Width = 50
+        BorderSpacing.Top = 6
+        Caption = 'or use a '
+        ParentColor = False
+      end
+      object RadioButton7: TRadioButton
+        AnchorSideLeft.Control = RadioButton5
+        AnchorSideTop.Control = Label30
+        AnchorSideTop.Side = asrBottom
+        Left = 34
+        Height = 23
+        Top = 183
+        Width = 135
+        BorderSpacing.Top = 6
+        Caption = 'List of host names'
+        TabOrder = 3
       end
     end
     object PageMqttBroker: TPage
@@ -1023,6 +1047,7 @@ object MainForm: TMainForm
       end
     end
     object PageHttpScan: TPage
+      OnBeforeShow = PageHttpScanBeforeShow
       object Label23: TLabel
         AnchorSideLeft.Control = PageHttpScan
         AnchorSideTop.Control = PageHttpScan
@@ -1178,8 +1203,8 @@ object MainForm: TMainForm
         ExtendedSelect = False
         ItemHeight = 0
         OnDblClick = IncludeListBoxDblClick
-        ScrollWidth = 1
-        TabOrder = 6
+        ScrollWidth = 118
+        TabOrder = 9
         TopIndex = -1
       end
       object ExcludeCheckBox: TCheckBox
@@ -1194,7 +1219,7 @@ object MainForm: TMainForm
         Caption = 'Exclude'
         Color = clDefault
         ParentColor = False
-        TabOrder = 7
+        TabOrder = 6
       end
       object IncludeCheckBox: TCheckBox
         AnchorSideLeft.Side = asrBottom
@@ -1243,7 +1268,7 @@ object MainForm: TMainForm
         OnChange = ScanAttemptsEditChange
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 9
+        TabOrder = 10
         Value = 2
       end
       object Label31: TLabel
@@ -1278,7 +1303,7 @@ object MainForm: TMainForm
         MaxValue = 300
         MinValue = 1
         OnChange = ScanAttemptsEditChange
-        TabOrder = 10
+        TabOrder = 11
         Value = 2
       end
       object Next1Button1: TButton
@@ -1295,7 +1320,7 @@ object MainForm: TMainForm
         BorderSpacing.Bottom = 6
         Caption = 'Next'
         OnClick = Next1Button1Click
-        TabOrder = 11
+        TabOrder = 12
       end
       object Label27: TLabel
         AnchorSideLeft.Control = FirstIPEdit
@@ -1322,7 +1347,7 @@ object MainForm: TMainForm
         BorderSpacing.Right = 6
         Caption = 'Back'
         OnClick = Back2Button1Click
-        TabOrder = 12
+        TabOrder = 13
       end
       object ExcludeListBox: TListBox
         AnchorSideLeft.Control = ExcludeCheckBox
@@ -1340,9 +1365,128 @@ object MainForm: TMainForm
         BorderSpacing.Bottom = 6
         ItemHeight = 0
         OnDblClick = ExcludeListBoxDblClick
-        ScrollWidth = 1
-        TabOrder = 13
+        ScrollWidth = 118
+        TabOrder = 7
         TopIndex = -1
+      end
+    end
+    object Page1: TPage
+      object Label33: TLabel
+        AnchorSideLeft.Control = Page1
+        AnchorSideTop.Control = Page1
+        Left = 12
+        Height = 14
+        Top = 6
+        Width = 119
+        BorderSpacing.Left = 12
+        BorderSpacing.Top = 6
+        Caption = 'List of Host Names'
+        Font.Style = [fsBold]
+        ParentColor = False
+        ParentFont = False
+      end
+      object Back2Button3: TButton
+        AnchorSideTop.Control = Next1Button2
+        AnchorSideTop.Side = asrCenter
+        AnchorSideRight.Control = Next1Button
+        Left = 244
+        Height = 25
+        Top = 299
+        Width = 75
+        Anchors = [akTop, akRight]
+        BorderSpacing.Right = 6
+        Caption = 'Back'
+        OnClick = Back2Button1Click
+        TabOrder = 5
+      end
+      object Next1Button2: TButton
+        AnchorSideRight.Control = Page1
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = Page1
+        AnchorSideBottom.Side = asrBottom
+        Left = 325
+        Height = 25
+        Top = 299
+        Width = 75
+        Anchors = [akRight, akBottom]
+        BorderSpacing.Right = 6
+        BorderSpacing.Bottom = 6
+        Caption = 'Next'
+        OnClick = Next1Button2Click
+        TabOrder = 4
+      end
+      object FileListEdit: TFileNameEdit
+        AnchorSideLeft.Control = CheckBox2
+        AnchorSideTop.Control = CheckBox2
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = Page1
+        AnchorSideRight.Side = asrBottom
+        Left = 18
+        Height = 27
+        Top = 61
+        Width = 382
+        FilterIndex = 0
+        HideDirectories = False
+        ButtonWidth = 23
+        NumGlyphs = 1
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Left = 12
+        BorderSpacing.Top = 6
+        BorderSpacing.Right = 6
+        MaxLength = 0
+        TabOrder = 1
+      end
+      object CheckBox2: TCheckBox
+        AnchorSideLeft.Control = Page1
+        AnchorSideTop.Control = Label33
+        AnchorSideTop.Side = asrBottom
+        Left = 6
+        Height = 23
+        Top = 32
+        Width = 160
+        BorderSpacing.Left = 6
+        BorderSpacing.Top = 12
+        Caption = 'Include host name file'
+        TabOrder = 0
+      end
+      object CheckBox3: TCheckBox
+        AnchorSideLeft.Control = Page1
+        AnchorSideTop.Control = FileListEdit
+        AnchorSideTop.Side = asrBottom
+        Left = 6
+        Height = 23
+        Top = 100
+        Width = 143
+        BorderSpacing.Left = 6
+        BorderSpacing.Top = 12
+        Caption = 'Include these hosts'
+        TabOrder = 2
+      end
+      object Memo1: TMemo
+        AnchorSideLeft.Control = CheckBox3
+        AnchorSideTop.Control = CheckBox3
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = FileListEdit
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = Next1Button2
+        Left = 18
+        Height = 164
+        Top = 129
+        Width = 382
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        BorderSpacing.Left = 12
+        BorderSpacing.Top = 6
+        BorderSpacing.Bottom = 6
+        Lines.Strings = (
+          'torchere'
+          '192.168.0.116'
+          'garage-exterieur'
+          'junk'
+          '192.160.0.104'
+        )
+        ScrollBars = ssAutoBoth
+        TabOrder = 3
+        WordWrap = False
       end
     end
   end

@@ -33,14 +33,16 @@ unit main;
 
 interface
 
-// Set these defines to help in determining the timeout and retry
-// parameters of the HTTP request function
-// See log() function below
+// Define these directives to help in determining the timeout and retry
+// parameters of the HTTP request function. It is probably best to
+// define the directives in the Custom Options of the Project Options
 //
 { -- $DEFINE DEBUG_HTTP_REQUEST}
 { -- $DEFINE DEBUG_BACKUP}
 { -- $DEFINE DEBUG_HTTP_SCAN}
-{ -- $DEFINE TIME_HTTP_SCAN}   // this will not update the found devices
+{ -- $DEFINE TIME_HTTP_SCAN}
+// The last directive suspends updating the list of found devices and is
+// only used to time a scan takes to pinging the IP addresses
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
@@ -55,8 +57,12 @@ type
     Back2Button: TButton;
     Back2Button1: TButton;
     Back2Button2: TButton;
+    Back2Button3: TButton;
     Bevel1: TBevel;
     Bevel2: TBevel;
+    CheckBox2: TCheckBox;
+    CheckBox3: TCheckBox;
+    FileListEdit: TFileNameEdit;
     ExcludeCheckBox: TCheckBox;
     ExcludeListBox: TListBox;
     FirstIPEdit: TEdit;
@@ -77,18 +83,24 @@ type
     Label27: TLabel;
     Label28: TLabel;
     Label29: TLabel;
+    Label30: TLabel;
     Label31: TLabel;
     Label32: TLabel;
+    Label33: TLabel;
     LastIPEdit: TEdit;
+    Memo1: TMemo;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     N2: TMenuItem;
     Next1Button1: TButton;
+    Next1Button2: TButton;
     NextButton1: TButton;
+    Page1: TPage;
     PageHttpScan: TPage;
     RadioButton5: TRadioButton;
     RadioButton6: TRadioButton;
+    RadioButton7: TRadioButton;
     RadioButton8: TRadioButton;
     ScanAttemptsEdit: TSpinEdit;
     ScanTimeoutEdit: TSpinEdit;
@@ -163,7 +175,10 @@ type
     procedure MenuItem2Click(Sender: TObject);
     procedure MenuItem3Click(Sender: TObject);
     procedure Next1Button1Click(Sender: TObject);
+    procedure Next1Button2Click(Sender: TObject);
     procedure NextButton1Click(Sender: TObject);
+    procedure PageHttpScanBeforeShow(ASender: TObject; ANewPage: TPage;
+      ANewIndex: Integer);
     procedure PasswordEditButtonClick(Sender: TObject);
     procedure PopupMenu1Close(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
@@ -218,6 +233,7 @@ type
     function GetExtension: string;
     procedure GetDevicesFromMqttBroker;
     procedure GetDevicesWithHttpScan;
+    procedure GetDevicesFromList(hosts: TStrings);
     procedure UpdateCheckCount;
     procedure CopyResGridToClipbrd(delim: char);
   public
@@ -230,8 +246,8 @@ var
 implementation
 
 uses
-  LCLIntf, clipbrd, fileinfo, options, ssockets, fphttpclient, mqttclass, mosquitto,
-  iplistedit, math;
+  LCLIntf, clipbrd, fileinfo, options, resolve, ssockets, fphttpclient,
+  mqttclass, mosquitto, iplistedit, math;
 
 {$R *.lfm}
 
@@ -297,6 +313,19 @@ begin
   tcount := GetTickCount64;
   while (GetTickCount64 - tcount < dt) and (not Application.Terminated) do
     Application.ProcessMessages;
+end;
+
+procedure TcpPortAvailable(const host: string; port: integer; timeout: integer = 5000);
+begin
+  if timeout < 1000 then
+    timeout := 1000;
+  try
+    With TInetSocket.Create(Host, Port, timeout) do begin
+      Free;
+    end;
+  except
+    Raise Exception.createFmt('%s:%d not reachable', [host, port]);
+  end;
 end;
 
 {
@@ -988,6 +1017,97 @@ begin
   end;
 end;
 
+procedure TMainForm.GetDevicesFromList(hosts: TStrings);
+const
+  URLB = 'http://%s/cm?cmnd=';
+var
+  myHostname, myTopic, myIps: string;
+  code: integer;
+  url: string;
+  {$IFDEF TIME_HTTP_SCAN}
+  deb, fin: TDateTime;
+  {$ELSE}
+  r: integer;
+  {$ENDIF}
+
+  i, j: integer;
+  ip: TIPv4;
+  resolver: THostResolver;
+
+  function FindValue(const key: string; var value: string): boolean;
+  var
+    p: integer;
+  begin
+    result := true;
+    p := pos('"' + key + '":"', value);
+    if p > 0 then begin
+      delete(value, 1, p + length(key)+3);
+      p := pos('"', value);
+      if p > 0 then begin
+        delete(value, p, maxint);
+        exit;
+      end;
+    end;
+    value := '';
+    result := false;
+  end;
+
+  function CheckIP(aIP: TIPv4): integer;
+  begin
+    result := 0;
+    myIps := aip.ToString;
+    url := Format(URLB, [myIps]);
+    myHostname := '';
+    myTopic := '';
+    {$IFNDEF TIME_HTTP_SCAN}
+    label11.Caption := 'Checking ' + myIps;
+    label11.Repaint;
+    delay(2);
+    {$ENDIF}
+    if not HttpRequest(url + 'hostname', code, myHostname, ScanAttemptsEdit.value, ScanTimeOutEdit.value*1000) then
+    //if not HttpRequest(url + 'hostname', code, myHostname) then
+      result := -1;
+    if not FindValue('Hostname', myHostname) then
+      result := -1;
+    if not HttpRequest(url + 'topic', code, myTopic, ScanAttemptsEdit.value, ScanTimeOutEdit.value*1000) then
+    //if not HttpRequest(url + 'topic', code, myTopic) then
+      result := -2;
+    if not FindValue('Topic', myTopic) then
+      result := -2;
+    if result = 0 then with DeviceGrid do begin
+        r := RowCount;
+        RowCount := RowCount+1;
+        cells[0, r] := '1';
+        cells[1, r] := myIps;
+        cells[2, r] := myTopic;
+        cells[3, r] := myHostname;
+        MainForm.newdev := true;
+    end;
+    notebook1.invalidate;
+    Delay(2);
+  end;
+
+begin
+  Next2Button.Enabled := false;
+  Screen.Cursor := crHourGlass;
+  resolver := THostResolver.Create(self);
+  ip.value := 0;
+  try
+    for i := 0 to hosts.count-1 do begin
+      if resolver.NameLookup(trim(hosts[i])) then
+        ip.value := longword(resolver.Addresses[0])
+      else if not ip.TryFromString(trim(hosts[i])) then
+        ip.value := 0;
+      if ip.value <> 0 then
+        CheckIp(ip);
+    end;
+  finally
+    Screen.Cursor := crDefault;
+    next2Button.Enabled := true;
+    next2Button.SetFocus;
+  end;
+end;
+
 function TMainForm.GetExtension: string;
 begin
   result := ExtensionEdit.Text;
@@ -1078,25 +1198,44 @@ begin
   GetDevicesWithHttpScan;
 end;
 
+procedure TMainForm.Next1Button2Click(Sender: TObject);
+var
+  hosts: TStringList;
+begin
+  hosts := TStringList.create;
+  try
+    if CheckBox2.Checked then
+      hosts.LoadFromFile(FileListEdit.FileName);
+    if CheckBox3.Checked then
+      hosts.AddText(Memo1.Lines.Text);
+    if hosts.count < 1 then begin
+      OptionsButtonClick(nil);
+      exit;
+    end;
+    Notebook1.PageIndex := 2;
+    CheckBox1.SetFocus;
+    Notebook1.invalidate;
+    Delay(2);
+      GetDevicesFromList(hosts);
+  finally
+    hosts.free;
+  end;
+end;
+
 procedure TMainForm.NextButton1Click(Sender: TObject);
 begin
   if RadioButton5.Checked then
      Notebook1.PageIndex := 1
+  else if RadioButton6.Checked then
+     Notebook1.PageIndex := 6
   else
-     Notebook1.PageIndex := 6;
+     Notebook1.PageIndex := 7;
 end;
 
-procedure TcpPortAvailable(const host: string; port: integer; timeout: integer = 5000);
+procedure TMainForm.PageHttpScanBeforeShow(ASender: TObject; ANewPage: TPage;
+  ANewIndex: Integer);
 begin
-  if timeout < 1000 then
-    timeout := 1000;
-  try
-    With TInetSocket.Create(Host, Port, timeout) do begin
-      Free;
-    end;
-  except
-    Raise Exception.createFmt('%s:%d not reachable', [host, port]);
-  end;
+
 end;
 
 procedure TMainForm.Next1ButtonClick(Sender: TObject);
