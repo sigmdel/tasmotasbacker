@@ -2,29 +2,23 @@ unit options;
 
 {$mode objfpc}{$H+}
 
-// set these defines in the project options
-{-- $DEFINE INCLUDE_MQTT_OPTIONS}
-{-- $DEFINE INCLUDE_HTTP_OPTIONS}
-
 interface
 
 uses
   Classes, SysUtils, inifiles;
 
 const
-  {$IFDEF INCLUDE_MQTT_OPTIONS}
-    {$IFDEF INCLUDE_HTTP_OPTIONS}
-       DEFAULT_DISCOVERY_METHOD = 0;   // MQTT, 1 HTTP
-    {$ENDIF}
+  DEFAULT_DISCOVERY_METHOD = 0;   // MQTT, 1 HTTP, 2 HOST LIST
+
+  // default mqtt options
   DEFAULT_HOST = '192.168.1.22';
   DEFAULT_PORT = 1883;
   DEFAULT_PASSWORD = '';
   DEFAULT_USER = '';
   DEFAULT_TOPIC = 'tasmotas, sonoffs';
   DEFAULT_MQTT_TIMEOUT = 2;
-  {$ENDIF}
 
-  {$IFDEF INCLUDE_HTTP_OPTIONS}
+  // default http scan options
   DEFAULT_SUBNET = '192.168.0.0';
   DEFAULT_SUBNET_BITS = 24;
   DEFAULT_SCAN_ALL_IP = true;
@@ -32,9 +26,14 @@ const
   DEFAULT_LAST_IP = '192.168.0.200';
   DEFAULT_SCAN_ATTEMPTS = 2;
   DEFAULT_SCAN_TIMEOUT = 1;          // seconds
-  {$ENDIF}
 
-  // backup options
+  // default use host list options
+  DEFAULT_INCLUDE_HOST_FILE = false;
+  DEFAULT_HOST_FILE_NAME = '';
+  DEFAULT_INCLUDE_HOST_LIST  = false;
+  DEFAULT_HOST_LIST = '';
+
+  // default backup options
   DEFAUT_DATE_FORMAT = 2;
   DEFAULT_DEVICE_NAME = 0;
   DEFAULT_BACK_DIRECTORY = 'backup';
@@ -43,30 +42,29 @@ const
   DEFAULT_DOWNLOAD_ATTEMPTS = 2;
   DEFAULT_DOWNLOAD_TIMEOUT = 4;
 
-
 type
   
   { TParams }
 
-  {$IFDEF INCLUDE_HTTP_OPTIONS}
-  TIpListAction = (ilaNothing, ilaSave, ilaErase);
-  {$ENDIF}
+  TOptionListAction = (olaNothing, olaSave, olaErase);
 
   TParams = class
   private
     ini: TIniFile;
 
-    {$IFDEF INCLUDE_HTTP_OPTIONS}
+    FDiscoveryMethod: integer;
+
     FIncludeIPs: TStrings;
     FExcludeIPs: TStrings;
-    FExcludeIPsAction: TIpListAction;
-    FIncludeIPsAction: TIPListAction;
+    FExcludeIPsAction: TOptionListAction;
+    FIncludeIPsAction: TOptionListAction;
 
-      {$IFDEF INCLUDE_MQTT_OPTIONS}
-    FDiscoveryMethod: integer;
+    FHostList: TStrings;
+    FHostListAction: TOptionListAction;
+
     function GetDiscoveryMethod: integer;
     procedure SetDiscoveryMethod(AValue: integer);
-      {$ENDIF}
+
     function GetSubnet: string;
     function GetSubnetBits: integer;
     function GetScanAllIP: boolean;
@@ -84,10 +82,6 @@ type
     procedure SetScanAttempts(AValue: integer);
     procedure SetScanTimeout(AValue: integer);
 
-
-    {$ENDIF}
-
-    {$IFDEF INCLUDE_MQTT_OPTIONS}
     function GetHost: string;
     function GetPort: integer;
     function GetUser: string;
@@ -100,7 +94,14 @@ type
     procedure SetPassword(AValue: string);
     procedure SetTopic(AValue: string);
     procedure SetMqttTimeout(AValue: integer);
-    {$ENDIF}
+
+    function GetIncludeHostFile: boolean;
+    function GetHostFilename: string;
+    function GetIncludeHostList: boolean;
+    procedure SetIncludeHostFile(AValue: boolean);
+    procedure SetHostFilename(AValue: string);
+    procedure SetIncludeHostList(AValue: boolean);
+    procedure SetHostList(AValue: TStrings);
 
     function GetDownloadAttempts: integer;
     function GetDownloadTimeout: integer;
@@ -109,7 +110,6 @@ type
     function GetDirectory: string;
     function GetExtension: string;
     function GetFilenameFormat: integer;
-
     procedure SetDownloadAttempts(AValue: integer);
     procedure SetDownloadTimeout(AValue: integer);
     procedure SetDateFormat(AValue: integer);
@@ -121,19 +121,17 @@ type
     constructor create;
     destructor destroy; override;
 
-    {$IFDEF INCLUDE_MQTT_OPTIONS}
-      {$IFDEF INCLUDE_HTTP_OPTIONS}
     property DiscoveryMethod: integer read GetDiscoveryMethod write SetDiscoveryMethod;
-      {$ENDIF}
+
+    // mqtt options
     property Host: string read GetHost write SetHost;
     property Port: integer read GetPort write SetPort;
     property User: string read GetUser write SetUser;
     property Password: string read GetPassword write SetPassword;
     property Topic: string read GetTopic write SetTopic;
     property MqttTimeout: integer read GetMqttTimeout write SetMqttTimeout;
-    {$ENDIF}
 
-    {$IFDEF INCLUDE_HTTP_OPTIONS}
+    // http options
     property Subnet: string read GetSubnet write SetSubnet;
     property SubnetBits: integer read GetSubnetBits write SetSubnetBits;
     property ScanAllIP: boolean read GetScanAllIP write SetScanAllIP;
@@ -142,11 +140,18 @@ type
     property ScanAttempts: integer read GetScanAttempts write SetScanAttempts;
     property ScanTimeout: integer read GetScanTimeout write SetScanTimeout;
     property ExcludeIPs: TStrings read FExcludeIPs write SetExcludeIPs;
-    property ExcludeIPsAction: TIpListAction read FExcludeIPsAction write FExcludeIPsAction;
+    property ExcludeIPsAction: TOptionListAction read FExcludeIPsAction write FExcludeIPsAction;
     property IncludeIPs: TStrings read FIncludeIPs write SetIncludeIPs;
-    property IncludeIPsAction: TIpListAction read FIncludeIPsAction write FIncludeIPsAction;
-    {$ENDIF}
+    property IncludeIPsAction: TOptionListAction read FIncludeIPsAction write FIncludeIPsAction;
 
+    // host list options
+    property IncludeHostFile: boolean read GetIncludeHostFile write SetIncludeHostFile;
+    property HostFileName: string read GetHostFilename write SetHostFilename;
+    property IncludeHostList: boolean read GetIncludeHostList write SetIncludeHostList;
+    property HostList: TStrings read FHostList write SetHostList;
+    property HostListAction: TOptionListAction read FHostListAction write FHostListAction;
+
+    // backup options
     property Directory: string read GetDirectory write SetDirectory;
     property Extension: string read GetExtension write SetExtension;
     property DateFormat: integer read GetDateFormat write SetDateFormat;
@@ -161,20 +166,17 @@ var
 
 implementation
 
-{$IFDEF INCLUDE_MQTT_OPTIONS}
 uses
   pwd;
-{$ENDIF}
 
 const
   // never translated these ini file section and entry names
   Soptions = 'Options';
+  Sexclude = 'Exclude';
+  Sinclude = 'Include';
+  Shosts = 'Hosts';
 
-  {$IFDEF INCLUDE_MQTT_OPTIONS}
-
-    {$IFDEF INCLUDE_HTTP_OPTIONS}
-  SdiscoveryMethod = 'DiscoveryMethod';
-    {$ENDIF}
+    SdiscoveryMethod = 'DiscoveryMethod';
 
   Shost = 'Host';
   Sport = 'Port';
@@ -182,11 +184,6 @@ const
   Spassword = 'Password';
   Stopic = 'Topic';
   SmqttTimeout = 'MqttTimeout';
-  {$ENDIF}
-
-  {$IFDEF INCLUDE_HTTP_OPTIONS}
-  Sexclude = 'Exclude';
-  Sinclude = 'Include';
 
   Ssubnet = 'Subnet';
   SsubnetBits = 'SubnetBits';
@@ -195,7 +192,10 @@ const
   SlastIP = 'LastIp';
   SscanAttempts = 'ScanAttempts';
   SscanTimeout = 'ScanTimeout';
-  {$ENDIF}
+
+  SincludeHostFile = 'IncludeHostFile';
+  ShostFilename = 'HostFileName';
+  SincludeHostList = 'IncludeHostList';
 
   Sdirectory = 'Directory';
   Sextension = 'Extension';
@@ -225,7 +225,17 @@ end;
 
 { TParams }
 
-{$IFDEF INCLUDE_MQTT_OPTIONS}
+
+function TParams.GetDiscoveryMethod: integer;
+begin
+  result := ini.ReadInteger(Soptions, SdiscoveryMethod, DEFAULT_DISCOVERY_METHOD);
+end;
+
+procedure TParams.SetDiscoveryMethod(AValue: integer);
+begin
+  ini.WriteInteger(Soptions, SdiscoveryMethod, AValue);
+end;
+
 
 function TParams.GetHost: string;
 begin
@@ -287,21 +297,43 @@ begin
   ini.WriteInteger(Soptions, SmqttTimeout, AValue);
 end;
 
-{$ENDIF}
 
-{$IFDEF INCLUDE_HTTP_OPTIONS}
 
-  {$IFDEF INCLUDE_MQTT_OPTIONS}
-function TParams.GetDiscoveryMethod: integer;
+function TParams.GetIncludeHostFile: boolean;
 begin
-  result := ini.ReadInteger(Soptions, SdiscoveryMethod, DEFAULT_DISCOVERY_METHOD);
+  result := ini.ReadBool(Soptions, SincludeHostFile, DEFAULT_INCLUDE_HOST_FILE);
 end;
 
-procedure TParams.SetDiscoveryMethod(AValue: integer);
+function TParams.GetHostFilename: string;
 begin
-  ini.WriteInteger(Soptions, SdiscoveryMethod, AValue);
+  result := ini.ReadString(Soptions, ShostFilename, DEFAULT_HOST_FILE_NAME);
 end;
-  {$ENDIF}
+
+function TParams.GetIncludeHostList: boolean;
+begin
+  result := ini.ReadBool(Soptions, SincludeHostList, DEFAULT_INCLUDE_HOST_LIST);
+end;
+
+procedure TParams.SetIncludeHostFile(AValue: boolean);
+begin
+  ini.WriteBool(Soptions, SincludeHostFile, AValue);
+end;
+
+procedure TParams.SetHostFilename(AValue: string);
+begin
+  ini.WriteString(Soptions, ShostFilename, AValue);
+end;
+
+procedure TParams.SetIncludeHostList(AValue: boolean);
+begin
+  ini.WriteBool(Soptions, SincludeHostList, AValue);
+end;
+
+procedure TParams.SetHostList(AValue: TStrings);
+begin
+  FHostList.assign(AValue);
+end;
+
 
 function TParams.GetSubnet: string;
 begin
@@ -383,8 +415,6 @@ begin
   ini.WriteInteger(Soptions, SscanTimeout, AValue);
 end;
 
-{$ENDIF}
-
 function TParams.GetDateFormat: integer;
 begin
   result := ini.ReadInteger(Soptions, SdateFormat, DEFAUT_DATE_FORMAT);
@@ -457,49 +487,54 @@ end;
 
 
 constructor TParams.create;
-{$IFDEF INCLUDE_HTTP_OPTIONS}
 var
   i: integer;
-{$ENDIF}
 begin
   inherited create;
   ini := TIniFile.create(configfile, []);
-  {$IFDEF INCLUDE_HTTP_OPTIONS}
   FIncludeIPs := TStringList.create;
   FExcludeIPs := TStringList.create;
+  FHostList := TStringList.create;
   ini.ReadSectionValues(Sexclude, FExcludeIPs);
   ini.ReadSectionValues(Sinclude, FIncludeIPs);
+  ini.ReadSectionValues(Shosts, FHostList);
   for i := 0 to FExcludeIPs.count-1 do
     FExcludeIPs[i] := FExcludeIPs.ValueFromIndex[i];
   for i := 0 to FIncludeIPs.count-1 do
     FIncludeIPs[i] := FIncludeIPs.ValueFromIndex[i];
-  {$ENDIF}
+  for i := 0 to FHostList.count-1 do
+    FHostList[i] := FHostList.ValueFromIndex[i];
 end;
 
 destructor TParams.destroy;
-{$IFDEF INCLUDE_HTTP_OPTIONS}
 var
   i: integer;
-{$ENDIF}
 begin
-  {$IFDEF INCLUDE_HTTP_OPTIONS}
-  if ExcludeIPsAction <> ilaNothing then begin
+  if ExcludeIPsAction <> olaNothing then begin
     ini.EraseSection(Sexclude);
-    if ExcludeIPsAction = ilaSave then begin
+    if ExcludeIPsAction = olaSave then begin
       for i := 0 to FExcludeIPs.count-1 do
          ini.writeString(Sexclude, Format('%0.3d', [i]), FExcludeIPs[i]);
     end;
   end;
-  if IncludeIPsAction <> ilaNothing then begin
+  if IncludeIPsAction <> olaNothing then begin
     ini.EraseSection(Sinclude);
-    if IncludeIPsAction = ilaSave then begin
+    if IncludeIPsAction = olaSave then begin
       for i := 0 to FIncludeIPs.count-1 do
-         ini.writeString(sinclude, Format('%0.3d', [i]), FIncludeIPs[i]);
+         ini.writeString(Sinclude, Format('%0.3d', [i]), FIncludeIPs[i]);
     end;
   end;
+  if HostListAction <> olaNothing then begin
+    ini.EraseSection(Shosts);
+    if HostListAction = olaSave then begin
+      for i := 0 to FHostList.count-1 do
+         ini.writeString(Shosts, Format('%0.3d', [i]), FHostList[i]);
+    end;
+  end;
+
   FIncludeIPs.free;
   FExcludeIPs.free;
-  {$ENDIF}
+  FHostList.Free;
   ini.free;
   inherited destroy;
 end;
@@ -511,9 +546,7 @@ initialization
   ForceDirectories(configfile);   // create config directory, report error if false ?
   configfile := IncludeTrailingPathDelimiter(configfile) + CONFIGFILENAME;
   params := TParams.create;
-  {$IFDEF INCLUDE_MQTT_OPTIONS}
   getEncryptionKey(ExtractFilePath(configfile) + 'key.txt');
-  {$ENDIF}
 finalization
   params.free;
 end.
