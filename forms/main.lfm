@@ -15,7 +15,7 @@ object MainForm: TMainForm
     Height = 330
     Top = 0
     Width = 406
-    PageIndex = 3
+    PageIndex = 0
     Align = alClient
     OnResize = FormResize
     TabOrder = 0
@@ -160,7 +160,7 @@ object MainForm: TMainForm
         Width = 153
         BorderSpacing.Left = 12
         BorderSpacing.Top = 12
-        Caption = 'Device discovery method:'
+        Caption = 'Discover Tasmota devices'
         ParentColor = False
       end
       object RadioButton5: TRadioButton
@@ -170,10 +170,10 @@ object MainForm: TMainForm
         Left = 34
         Height = 23
         Top = 105
-        Width = 190
+        Width = 198
         BorderSpacing.Left = 22
         BorderSpacing.Top = 14
-        Caption = 'With MQTT status message'
+        Caption = 'with a MQTT status message'
         Checked = True
         TabOrder = 1
         TabStop = True
@@ -185,9 +185,9 @@ object MainForm: TMainForm
         Left = 34
         Height = 23
         Top = 134
-        Width = 120
+        Width = 136
         BorderSpacing.Top = 6
-        Caption = 'With HTTP scan'
+        Caption = 'with an HTTP scan'
         TabOrder = 2
       end
       object Label30: TLabel
@@ -209,9 +209,9 @@ object MainForm: TMainForm
         Left = 34
         Height = 23
         Top = 183
-        Width = 135
+        Width = 132
         BorderSpacing.Top = 6
-        Caption = 'List of host names'
+        Caption = 'list of host names'
         TabOrder = 3
       end
     end
@@ -1011,7 +1011,7 @@ object MainForm: TMainForm
         FixedCols = 0
         Flat = True
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goColSizing, goSmoothScroll, goCellEllipsis]
-        RowCount = 24
+        RowCount = 28
         TabOrder = 1
         OnClick = GridClick
         OnHeaderSized = GridHeaderSized
@@ -1370,10 +1370,10 @@ object MainForm: TMainForm
         TopIndex = -1
       end
     end
-    object Page1: TPage
+    object PageHostList: TPage
       object Label33: TLabel
-        AnchorSideLeft.Control = Page1
-        AnchorSideTop.Control = Page1
+        AnchorSideLeft.Control = PageHostList
+        AnchorSideTop.Control = PageHostList
         Left = 12
         Height = 14
         Top = 6
@@ -1400,9 +1400,9 @@ object MainForm: TMainForm
         TabOrder = 5
       end
       object Next1Button2: TButton
-        AnchorSideRight.Control = Page1
+        AnchorSideRight.Control = PageHostList
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = Page1
+        AnchorSideBottom.Control = PageHostList
         AnchorSideBottom.Side = asrBottom
         Left = 325
         Height = 25
@@ -1415,11 +1415,11 @@ object MainForm: TMainForm
         OnClick = Next1Button2Click
         TabOrder = 4
       end
-      object FileListEdit: TFileNameEdit
-        AnchorSideLeft.Control = CheckBox2
-        AnchorSideTop.Control = CheckBox2
+      object HostFileNameEdit: TFileNameEdit
+        AnchorSideLeft.Control = IncludeHostFileCheckBox
+        AnchorSideTop.Control = IncludeHostFileCheckBox
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = Page1
+        AnchorSideRight.Control = PageHostList
         AnchorSideRight.Side = asrBottom
         Left = 18
         Height = 27
@@ -1436,22 +1436,22 @@ object MainForm: TMainForm
         MaxLength = 0
         TabOrder = 1
       end
-      object CheckBox2: TCheckBox
-        AnchorSideLeft.Control = Page1
+      object IncludeHostFileCheckBox: TCheckBox
+        AnchorSideLeft.Control = PageHostList
         AnchorSideTop.Control = Label33
         AnchorSideTop.Side = asrBottom
         Left = 6
         Height = 23
         Top = 32
-        Width = 160
+        Width = 144
         BorderSpacing.Left = 6
         BorderSpacing.Top = 12
-        Caption = 'Include host name file'
+        Caption = 'Include hosts in file'
         TabOrder = 0
       end
-      object CheckBox3: TCheckBox
-        AnchorSideLeft.Control = Page1
-        AnchorSideTop.Control = FileListEdit
+      object IncludeHostListCheckBox: TCheckBox
+        AnchorSideLeft.Control = PageHostList
+        AnchorSideTop.Control = HostFileNameEdit
         AnchorSideTop.Side = asrBottom
         Left = 6
         Height = 23
@@ -1462,11 +1462,11 @@ object MainForm: TMainForm
         Caption = 'Include these hosts'
         TabOrder = 2
       end
-      object Memo1: TMemo
-        AnchorSideLeft.Control = CheckBox3
-        AnchorSideTop.Control = CheckBox3
+      object HostListMemo: TMemo
+        AnchorSideLeft.Control = IncludeHostListCheckBox
+        AnchorSideTop.Control = IncludeHostListCheckBox
         AnchorSideTop.Side = asrBottom
-        AnchorSideRight.Control = FileListEdit
+        AnchorSideRight.Control = HostFileNameEdit
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = Next1Button2
         Left = 18

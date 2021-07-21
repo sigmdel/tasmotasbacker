@@ -1,14 +1,21 @@
-unit main;
-
 (*
-  The utility can perform an HTTP scan to find Tasmota devices on the
-  local area network or query all devices through an MQTT broker.
+  File: main.pas
+
+  The utility can download the configuration of multiple Tasmota devices
+
+  To identify the Tasmotat devices it can
+
+    1. publish a Status 5 command as an MQTT message and
+       obtain the reply from all Tasmota devices connected to the broker
+
+    2. do an HTTP scan to find Tasmota devices on the local area network
+
+    3. use a predefined list of hosts (IP addresses or host names
+       mDns (i.e. .local domain) names are not supported).
 
   To communicate with the MQTT broker the Eclipse mosquitto libraries must be
-  installed on the system.   There is no need to install the mosquitto broker
-  assuming access to an MQTT broker is available on the network. If the
-  library is not found, then an HTTP scan will be the only way to identify
-  the Tasmota devices.
+  installed on the system. If the library is installed, the program will
+  work but only methods 2. or 3. can be used to identify the Tasmota devices.
 
   Uses a modified version of mosquitto-p which is a Free Pascal conversions of
   the libmosquitto header file mosquitto.h and mqttclass.pas by
@@ -29,20 +36,11 @@ unit main;
   Personalised Options of the Compiler Options in Project Options.
 *)
 
+unit main;
+
 {$mode objfpc}{$H+}
 
 interface
-
-// Define these directives to help in determining the timeout and retry
-// parameters of the HTTP request function. It is probably best to
-// define the directives in the Custom Options of the Project Options
-//
-{ -- $DEFINE DEBUG_HTTP_REQUEST}
-{ -- $DEFINE DEBUG_BACKUP}
-{ -- $DEFINE DEBUG_HTTP_SCAN}
-{ -- $DEFINE TIME_HTTP_SCAN}
-// The last directive suspends updating the list of found devices and is
-// only used to time a scan takes to pinging the IP addresses
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
@@ -60,9 +58,9 @@ type
     Back2Button3: TButton;
     Bevel1: TBevel;
     Bevel2: TBevel;
-    CheckBox2: TCheckBox;
-    CheckBox3: TCheckBox;
-    FileListEdit: TFileNameEdit;
+    IncludeHostFileCheckBox: TCheckBox;
+    IncludeHostListCheckBox: TCheckBox;
+    HostFileNameEdit: TFileNameEdit;
     ExcludeCheckBox: TCheckBox;
     ExcludeListBox: TListBox;
     FirstIPEdit: TEdit;
@@ -88,7 +86,7 @@ type
     Label32: TLabel;
     Label33: TLabel;
     LastIPEdit: TEdit;
-    Memo1: TMemo;
+    HostListMemo: TMemo;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
@@ -96,7 +94,7 @@ type
     Next1Button1: TButton;
     Next1Button2: TButton;
     NextButton1: TButton;
-    Page1: TPage;
+    PageHostList: TPage;
     PageHttpScan: TPage;
     RadioButton5: TRadioButton;
     RadioButton6: TRadioButton;
@@ -1017,6 +1015,17 @@ begin
   end;
 end;
 
+{ refactor both GetDevicesFromScan and GetDevicesFromList to
+  create a list of IP addresses that is passed on to the actual
+  ip scan procedure
+
+  That way it should be possible to avoid duplicate requests
+  in FromList
+
+  Need better error reporting about
+    host names that cannot be resolved
+    invalid IP addresses
+}
 procedure TMainForm.GetDevicesFromList(hosts: TStrings);
 const
   URLB = 'http://%s/cm?cmnd=';
@@ -1024,11 +1033,7 @@ var
   myHostname, myTopic, myIps: string;
   code: integer;
   url: string;
-  {$IFDEF TIME_HTTP_SCAN}
-  deb, fin: TDateTime;
-  {$ELSE}
   r: integer;
-  {$ENDIF}
 
   i, j: integer;
   ip: TIPv4;
@@ -1059,18 +1064,14 @@ var
     url := Format(URLB, [myIps]);
     myHostname := '';
     myTopic := '';
-    {$IFNDEF TIME_HTTP_SCAN}
     label11.Caption := 'Checking ' + myIps;
     label11.Repaint;
     delay(2);
-    {$ENDIF}
     if not HttpRequest(url + 'hostname', code, myHostname, ScanAttemptsEdit.value, ScanTimeOutEdit.value*1000) then
-    //if not HttpRequest(url + 'hostname', code, myHostname) then
       result := -1;
     if not FindValue('Hostname', myHostname) then
       result := -1;
     if not HttpRequest(url + 'topic', code, myTopic, ScanAttemptsEdit.value, ScanTimeOutEdit.value*1000) then
-    //if not HttpRequest(url + 'topic', code, myTopic) then
       result := -2;
     if not FindValue('Topic', myTopic) then
       result := -2;
@@ -1204,10 +1205,10 @@ var
 begin
   hosts := TStringList.create;
   try
-    if CheckBox2.Checked then
-      hosts.LoadFromFile(FileListEdit.FileName);
-    if CheckBox3.Checked then
-      hosts.AddText(Memo1.Lines.Text);
+    if IncludeHostFileCheckBox.Checked then
+      hosts.LoadFromFile(HostFileNameEdit.FileName);
+    if IncludeHostListCheckBox.Checked then
+      hosts.AddText(HostListMemo.Lines.Text);
     if hosts.count < 1 then begin
       OptionsButtonClick(nil);
       exit;
@@ -1373,41 +1374,63 @@ begin
     cells[2, 16] := ScanTimeoutEdit.Text;
     setCb(16, ScanTimeOutEdit.value = params.ScanTimeout);
 
-    cells[1, 17] := 'Backup directory';
-    cells[2, 17] := DirectoryEdit.Directory;
-    setCb(17, params.directory);
-
-    cells[1, 18] := 'Backup extension';
-    cells[2, 18] := ExtensionEdit.Text;
-    setCb(18, params.extension);
-
-    cells[1, 19] := 'Date format';
-    cells[2, 19] := DateformatEdit.Text;
-    setCb(19, DateformatEdit.ItemIndex = params.dateformat);
-
-    cells[1, 20] := 'Filename format';
-    if radioButton1.Checked then
-      cells[2, 20] := ChangeFileExt(radiobutton1.caption, '')
+    cells[1, 17] := 'Include hosts in file';
+    if IncludeHostFileCheckBox.checked then
+      cells[2, 17] := 'yes'
     else
-      cells[2, 20] := ChangeFileExt(radiobutton2.caption, '');
-    setCb(20, (radioButton1.checked and (params.filenameformat = 0))
+      cells[2, 17] := 'no';
+    setCb(17, IncludeHostFileCheckBox.checked = params.IncludeHostFile);
+
+    cells[1, 18] := 'Host file name';
+    cells[2, 18] := HostFilenameEdit.Filename;
+    setCb(18, params.HostFilename);
+
+    cells[1, 19] := 'Include hosts in list';
+    if IncludeHostListCheckBox.checked then
+      cells[2, 19] := 'yes'
+    else
+      cells[2, 19] := 'no';
+    setCb(19, IncludeHostListCheckBox.checked = params.IncludeHostList);
+
+    cells[1, 20] := 'Hosts list';
+    cells[2, 20] := ListIPs(HostListMemo.Lines);
+    setCb(20, HostListMemo.Lines.Equals(params.HostList));
+
+    cells[1, 21] := 'Backup directory';
+    cells[2, 21] := DirectoryEdit.Directory;
+    setCb(21, params.directory);
+
+    cells[1, 22] := 'Backup extension';
+    cells[2, 22] := ExtensionEdit.Text;
+    setCb(22, params.extension);
+
+    cells[1, 23] := 'Date format';
+    cells[2, 23] := DateformatEdit.Text;
+    setCb(23, DateformatEdit.ItemIndex = params.dateformat);
+
+    cells[1, 24] := 'Filename format';
+    if radioButton1.Checked then
+      cells[2, 24] := ChangeFileExt(radiobutton1.caption, '')
+    else
+      cells[2, 24] := ChangeFileExt(radiobutton2.caption, '');
+    setCb(24, (radioButton1.checked and (params.filenameformat = 0))
            or (radioButton2.checked and (params.filenameformat = 1)));
 
-    cells[1, 21] := 'Device name';
+    cells[1, 25] := 'Device name';
     if radioButton3.Checked then
-      cells[2, 21] := 'Topic'
+      cells[2, 25] := 'Topic'
     else
-      cells[2, 21] := 'Hostname';
-    setCb(21, (radioButton3.checked and (params.devicename = 0))
+      cells[2, 25] := 'Hostname';
+    setCb(25, (radioButton3.checked and (params.devicename = 0))
            or (radioButton4.checked and (params.devicename = 1)));
 
-    cells[1, 22] := 'Download attempts';
-    cells[2, 22] := DownloadAttemptsEdit.Text;
-    setCb(22, DownloadAttemptsEdit.value = params.DownloadAttempts);
+    cells[1, 26] := 'Download attempts';
+    cells[2, 26] := DownloadAttemptsEdit.Text;
+    setCb(26, DownloadAttemptsEdit.value = params.DownloadAttempts);
 
-    cells[1, 23] := 'Download timeout';
-    cells[2, 23] := DownloadTimeoutEdit.Text;
-    setCb(23, DownloadTimeoutEdit.value = params.DownloadTimeout);
+    cells[1, 27] := 'Download timeout';
+    cells[2, 27] := DownloadTimeoutEdit.Text;
+    setCb(27, DownloadTimeoutEdit.value = params.DownloadTimeout);
   end;
   Notebook1.PageIndex := 5;
   AllOptionsCheckBox.SetFocus;
@@ -1480,17 +1503,21 @@ begin
       10: params.ScanAllIP := DEFAULT_SCAN_ALL_IP;
       11: params.FirstiP := DEFAULT_FIRST_IP;
       12: params.LastIP := DEFAULT_LAST_IP;
-      13: params.ExcludeIPsAction := ilaErase;
-      14: params.IncludeIPsAction := ilaErase;
+      13: params.ExcludeIPsAction := olaErase;
+      14: params.IncludeIPsAction := olaErase;
       15: params.ScanAttempts := DEFAULT_SCAN_ATTEMPTS;
       16: params.ScanTimeout := DEFAULT_SCAN_TIMEOUT;
-      17: params.Directory := DEFAULT_BACK_DIRECTORY;
-      18: params.Extension := DEFAULT_EXTENSION;
-      19: params.DateFormat := DEFAUT_DATE_FORMAT;
-      20: params.FilenameFormat := DEFAULT_FILENAME_FORMAT;
-      21: params.DeviceName := DEFAULT_DEVICE_NAME;
-      22: params.DownloadAttempts := DEFAULT_DOWNLOAD_ATTEMPTS;
-      23: params.DownloadTimeout := DEFAULT_DOWNLOAD_TIMEOUT;
+      17: params.IncludeHostFile := DEFAULT_INCLUDE_HOST_FILE;
+      18: params.HostFilename := DEFAULT_HOST_FILE_NAME;
+      19: params.IncludeHostList := DEFAULT_INCLUDE_HOST_LIST;
+      20: params.HostListAction := olaErase;
+      21: params.Directory := DEFAULT_BACK_DIRECTORY;
+      22: params.Extension := DEFAULT_EXTENSION;
+      23: params.DateFormat := DEFAUT_DATE_FORMAT;
+      24: params.FilenameFormat := DEFAULT_FILENAME_FORMAT;
+      25: params.DeviceName := DEFAULT_DEVICE_NAME;
+      26: params.DownloadAttempts := DEFAULT_DOWNLOAD_ATTEMPTS;
+      27: params.DownloadTimeout := DEFAULT_DOWNLOAD_TIMEOUT;
      end;
   end;
   close;
@@ -1534,24 +1561,27 @@ begin
       10: params.ScanAllIP := FullRangeRadioButton.Checked;
       11: params.FirstIP := OptionsGrid.cells[2, i];
       12: params.LastIP := OptionsGrid.cells[2, i];
-      13: begin params.ExcludeIPsAction := ilaSave; params.ExcludeIPs := ExcludeListBox.Items; end;
-      14: begin params.IncludeIPsAction := ilaSave; params.IncludeIPs := IncludeListBox.Items; end;
+      13: begin params.ExcludeIPsAction := olaSave; params.ExcludeIPs := ExcludeListBox.Items; end;
+      14: begin params.IncludeIPsAction := olaSave; params.IncludeIPs := IncludeListBox.Items; end;
       15: params.ScanAttempts := ScanAttemptsEdit.value;
       16: params.ScanTimeout := ScanTimeoutEdit.value;
-      17: params.directory := OptionsGrid.cells[2, i];
-      18: params.extension := OptionsGrid.cells[2, i];
-      19: params.dateformat := DateFormatEdit.ItemIndex;
-
-      20: if RadioButton1.Checked then
+      17: params.IncludeHostFile := IncludeHostFileCheckbox.Checked;
+      18: params.HostFilename := OptionsGrid.cells[2, i];
+      19: params.IncludeHostList := IncludeHostListCheckbox.Checked;
+      20: begin params.HostListAction := olaSave; params.HostList := HostListMemo.Lines; end;
+      21: params.directory := OptionsGrid.cells[2, i];
+      22: params.extension := OptionsGrid.cells[2, i];
+      23: params.dateformat := DateFormatEdit.ItemIndex;
+      24: if RadioButton1.Checked then
             params.filenameformat := 0
           else
             params.filenameformat := 1;
-      21: if RadioButton3.Checked then
+      25: if RadioButton3.Checked then
             params.devicename := 0
           else
             params.devicename := 1;
-      22: params.DownloadAttempts := DownloadAttemptsEdit.value;
-      23: params.DownloadTimeout := DownloadTimeoutEdit.value;
+      26: params.DownloadAttempts := DownloadAttemptsEdit.value;
+      27: params.DownloadTimeout := DownloadTimeoutEdit.value;
      end;
   end;
   close;
