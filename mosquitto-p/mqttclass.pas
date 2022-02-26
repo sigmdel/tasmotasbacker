@@ -59,6 +59,7 @@ type
     keepalives: longint;
     reconnect_delay: longint;
     reconnect_backoff: boolean;
+    client_id: ansistring;
   end;
 
 type
@@ -169,11 +170,12 @@ begin
   inherited Create(true);
 
   FName:=name;
-  FMosquitto:=mosquitto_new(nil, true, self);
+  FConfig:=config;
+
+  FMosquitto:=mosquitto_new(PChar(@FConfig.client_id[1]), true, self);
   if FMosquitto=nil then
     raise Exception.Create('mosquitto instance creation failure');
 
-  FConfig:=config;
   FAutoReconnect:=true;
   InitCriticalSection(FMQTTStateLock);
   State:=mqttNone;
@@ -465,7 +467,6 @@ begin
     FMosquitto.OnUnsubscribe(mid);
 end;
 
-//procedure mqtt_on_connect(mosq: Pmosquitto; obj: pointer; rc: cint); cdecl;
 procedure mqtt_on_connect(mosq: Pmosquitto; obj: pointer; rc: cint); cdecl;
 var
   FMosquitto: TMQTTConnection absolute obj;
@@ -552,10 +553,7 @@ begin
 end;
 
 initialization
-  if mosquitto_lib_loaded then
-    libinited := mosquitto_lib_init() = MOSQ_ERR_SUCCESS
-  else
-    libinited := false;
+  libinited := mosquitto_lib_loaded and (mosquitto_lib_init() = MOSQ_ERR_SUCCESS);
   logger:=@mqtt_log;
 finalization
   if libinited then
